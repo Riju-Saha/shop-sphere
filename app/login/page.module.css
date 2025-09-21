@@ -1,0 +1,91 @@
+/* page.module.css */
+
+.pageWrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    background-color: black;
+    color: white;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    padding: 1rem;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 0 2rem;
+    width: 100%;
+    max-width: 400px;
+}
+
+.title {
+    text-align: center;
+    font-size: 2rem;
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+}
+
+.label {
+    margin-bottom: 0.5rem;
+}
+
+.button {
+    padding: 0.75rem;
+    background-color: #0070f3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.toggleContainer {
+    display: flex;
+    justify-content: space-around;
+    padding: 0.25rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.toggleBtn {
+    flex: 1;
+    padding: 0.5rem 1rem;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background-color 0.3s ease;
+}
+
+.activeBtn {
+    composes: toggleBtn;
+    background-color: #0070f3;
+    color: white;
+    font-weight: bold;
+    box-shadow: inset 0 0 0 1px #0070f3;
+}
+
+@media (max-width: 600px) {
+    .form {
+        max-width: 90%;
+        padding: 1.5rem;
+    }
+
+    .title {
+        font-size: 1.5rem;
+    }
+}

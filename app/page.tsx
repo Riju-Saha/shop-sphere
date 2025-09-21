@@ -1,103 +1,107 @@
-import Image from "next/image";
+'use client'
+
+import React from 'react';
+import TypingText from "@/components/ui/shadcn-io/typing-text";
+import Image from 'next/image'
+import logo from '../public/logo.png'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button';
+
+interface Styles {
+  pageWrapper: React.CSSProperties;
+  header: React.CSSProperties;
+  buttonContainer: React.CSSProperties;
+  button: React.CSSProperties;
+  mainContentContainer: React.CSSProperties;
+  logoContainerStyles: React.CSSProperties;
+  logoNameStyles: React.CSSProperties;
+}
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const router = useRouter();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleHome = () => {
+    router.push('/');
+  };
+
+  const handleLogin = () => {
+    router.push('/login');
+  };
+
+  const handleRegister = () => {
+    router.push('/register');
+  };
+
+  return (
+    <div style={styles.pageWrapper}>
+      <header style={styles.header}>
+        <div style={styles.logoContainerStyles} onClick={handleHome}>
+          <Image src={logo} alt="Shop Sphere Logo" style={{ height: '75px', width: 'auto' }} />
+          <Button style={styles.logoNameStyles}>Shop Sphere</Button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div style={styles.buttonContainer}>
+          <Button style={styles.button} onClick={handleLogin}>Login</Button>
+          <Button style={styles.button} onClick={handleRegister}>Register</Button>
+        </div>
+      </header>
+
+      <div style={styles.mainContentContainer}>
+        <TypingText
+          text={["Discover Unique Products.", "Connect with Creative Sellers.", "Your Marketplace, Your Way."]}
+          typingSpeed={75}
+          pauseDuration={1500}
+          showCursor={true}
+          cursorCharacter="|"
+          className="text-4xl font-bold"
+          textColors={['#3b82f6', '#8b5cf6', '#06b6d4']}
+          variableSpeed={{ min: 50, max: 120 }}
+        />
+      </div>
     </div>
   );
 }
+
+const styles: Styles = {
+  pageWrapper: {
+    height: '100vh',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    backgroundColor: 'black'
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    padding: '0 1vw 0 0',
+  },
+    logoContainerStyles: {
+        display: 'flex',
+        alignItems: 'center',
+        cursor: 'pointer'
+    },
+    logoNameStyles: {
+        marginLeft: '0.5rem',
+        fontSize: '1.1rem',
+        fontWeight: 'bold',
+        backgroundColor: 'black',
+        cursor: 'pointer'
+    },
+  buttonContainer: {
+    display: 'flex',
+    gap: '2vw',
+    flexWrap: 'wrap',
+  },
+  button: {
+    cursor: 'pointer',
+    backgroundColor: '#0e6fdeff',
+  },
+  mainContentContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100%',
+    flex: 1,
+  },
+};
