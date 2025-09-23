@@ -28,12 +28,16 @@ export default function Register() {
             createdAt: new Date()
         };
         await registerUserToDb(userData);
+<<<<<<< HEAD
         alert("Account created sucessfully");
         if (userType == "buyer") {
             router.push('/buyers')
         } else {
             router.push('/sellers')
         }
+=======
+        alert("Form submitted!");
+>>>>>>> 771db244772471c06684d1bc808c6c83c7715043
         console.log({ name, username, email, password, userType });
 
         setName("");
