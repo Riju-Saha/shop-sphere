@@ -5,6 +5,7 @@ import styles from './page.module.css';
 import { Input } from "@/components/ui/input"
 import Header from '../components/header';
 import { useRouter } from 'next/navigation'
+import { loginUserFromDb } from '../firebase/firebase';
 
 
 export default function Login() {
@@ -12,13 +13,30 @@ export default function Login() {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [userType, setUserType] = useState('buyer');
+    const [userType, setUserType] = useState<'buyer' | 'seller'>('buyer');
 
-    const handleFormSubmit = (e: any) => {
+    const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        alert("Form submitted!");
-        console.log({ email, password, userType });
-    }
+        try {
+            const user = await loginUserFromDb(email, password, userType);
+
+            if (user) {
+                alert("Logged in successfully!");
+                if (userType == "buyer") {
+                    router.push('/buyers')
+                } else {
+                    router.push('/sellers')
+                }
+                setEmail("")
+                setPassword("")
+                setUserType('buyer');
+            }
+
+        } catch (error) {
+            alert("Login failed. Please check your email and password.");
+            console.error(error);
+        }
+    };
 
     const handleRegister = () => {
         router.push('/register');
