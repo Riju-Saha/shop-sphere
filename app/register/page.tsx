@@ -5,6 +5,7 @@ import styles from './page.module.css';
 import { Input } from "@/components/ui/input"
 import Header from '../components/header';
 import { useRouter } from 'next/navigation'
+import { registerUserToDb } from '../firebase/firebase';
 
 
 export default function Register() {
@@ -14,12 +15,27 @@ export default function Register() {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [userType, setUserType] = useState('buyer');
+    const [userType, setUserType] = useState<'buyer' | 'seller'>('buyer');
 
-    const handleFormSubmit = (e: any) => {
+    const handleFormSubmit = async (e: any) => {
         e.preventDefault();
+        const userData = {
+            name,
+            username,
+            email,
+            userType,
+            password,
+            createdAt: new Date()
+        };
+        await registerUserToDb(userData);
         alert("Form submitted!");
         console.log({ name, username, email, password, userType });
+
+        setName("");
+        setUsername("")
+        setEmail("")
+        setPassword("")
+        setUserType('buyer');
     }
 
     const handleLogin = () => {
