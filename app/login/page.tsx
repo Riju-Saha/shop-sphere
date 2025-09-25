@@ -6,34 +6,40 @@ import { Input } from "@/components/ui/input"
 import Header from '../components/header';
 import { useRouter } from 'next/navigation'
 import { loginUserFromDb } from '../firebase/firebase';
-
+import { useAuth } from "../context/page"
 
 export default function Login() {
     const router = useRouter();
 
-    const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [userType, setUserType] = useState<'buyer' | 'seller'>('buyer');
+
+    const { login } = useAuth();
 
     const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const user = await loginUserFromDb(email, password, userType);
+            const user = await loginUserFromDb(username, password, userType);
 
             if (user) {
                 alert("Logged in successfully!");
-                if (userType == "buyer") {
-                    router.push('/buyers')
-                } else {
-                    router.push('/sellers')
-                }
-                setEmail("")
-                setPassword("")
+                login({
+                    name: user.name,
+                    username: user.username,
+                    email: user.email,
+                    type: userType
+                });
+                router.push('/');
+                setUsername("");
+                setPassword("");
                 setUserType('buyer');
+            } else {
+                alert("Login failed. Please check your username and password..");
             }
 
         } catch (error) {
-            alert("Login failed. Please check your email and password.");
+            alert("Login failed. Please check your username and password.");
             console.error(error);
         }
     };
@@ -67,13 +73,14 @@ export default function Login() {
                     </div>
 
                     <div className={styles.inputGroup}>
-                        <label htmlFor="email" className={styles.label}></label>
+                        <label htmlFor="username" className={styles.label}></label>
                         <Input
-                            type="email"
-                            placeholder="Email"
-                            id="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            // The type should be "text" for a username input
+                            type="text"
+                            placeholder="Username"
+                            id="username"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
                             className={styles.input}
                         />
                     </div>

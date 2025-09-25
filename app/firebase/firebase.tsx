@@ -44,7 +44,7 @@ export const registerUserToDb = async (userData: UserData) => {
   }
 };
 
-export const loginUserFromDb = async (email: string, password: string, userType: 'buyer' | 'seller') => {
+export const loginUserFromDb = async (username: string, password: string, userType: 'buyer' | 'seller') => {
   try {
     let userRef: DatabaseReference;
 
@@ -54,7 +54,7 @@ export const loginUserFromDb = async (email: string, password: string, userType:
       userRef = ref(db, 'sellers');
     }
 
-    const userQuery = query(userRef, orderByChild('email'), equalTo(email));
+    const userQuery = query(userRef, orderByChild('username'), equalTo(username));
 
     const snapshot = await get(userQuery);
 
@@ -72,10 +72,12 @@ export const loginUserFromDb = async (email: string, password: string, userType:
       }
     }
 
-    throw new Error("Invalid email or password.");
+    // throw new Error("Invalid email or password.");
+    return null;
   } catch (error: any) {
     console.error("Login failed:", error);
     const errorMessage = error.message || "An unknown error occurred.";
-    throw new Error(errorMessage);
+    // throw new Error(errorMessage);
+    return null;
   }
 };
