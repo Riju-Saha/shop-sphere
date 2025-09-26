@@ -7,6 +7,8 @@ import logo from '../public/logo.png';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useAuth } from './context/page';
+// Assuming Sections is at './components/sections' based on your import path
+import Sections from './components/sections'; 
 
 interface Styles {
   pageWrapper: React.CSSProperties;
@@ -17,6 +19,7 @@ interface Styles {
   logoContainerStyles: React.CSSProperties;
   logoNameStyles: React.CSSProperties;
   iconStyles: React.CSSProperties;
+  sectionsContainerStyles: React.CSSProperties; 
 }
 
 const styles: Styles = {
@@ -48,9 +51,8 @@ const styles: Styles = {
   },
   buttonContainer: {
     display: 'flex',
-    // Reduced gap slightly as icons are now closer
     gap: '1.5vw',
-    alignItems: 'center', // Align items vertically in the container
+    alignItems: 'center',
     flexWrap: 'wrap',
   },
   button: {
@@ -69,6 +71,12 @@ const styles: Styles = {
     cursor: 'pointer',
     width: '24px',
     height: '24px'
+  },
+  // NEW style for the container that will hold Sections and other logged-in content
+  sectionsContainerStyles: {
+    flex: 1, // Takes up remaining vertical space
+    overflowY: 'auto', // Allows scrolling for content
+    padding: '10px 0', // Example padding
   }
 };
 
@@ -79,7 +87,7 @@ const CartIcon = () => (
     width="24" height="24" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="2" strokeLinecap="round"
     strokeLinejoin="round"
-    style={styles.iconStyles} // Using the defined iconStyles
+    style={styles.iconStyles}
   >
     <circle cx="9" cy="21" r="1"></circle>
     <circle cx="20" cy="21" r="1"></circle>
@@ -133,14 +141,12 @@ export default function Home() {
     router.push('/register');
   };
 
-  // FIX: Redefined the handleLogout function correctly here
   const handleLogout = () => {
     setIsDropdownOpen(false);
     logout(); // Call the logout function from context
     router.push('/');
   };
 
-  // NEW: Defined the handleProfileClick function
   const handleProfileClick = () => {
     setIsDropdownOpen(false);
     // You can implement routing to a specific profile page here, e.g.:
@@ -148,7 +154,6 @@ export default function Home() {
     alert(`Routing to ${user?.name}'s Profile Page!`);
   };
 
-  // NEW: Defined the handleCartClick function
   const handleCartClick = () => {
     // Implement routing to cart page here
     // router.push('/cart'); 
@@ -233,9 +238,15 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Conditional rendering for logged-in/logged-out content */}
       {user ? (
-        null
+        // Renders Sections component and possibly other content for logged-in users
+        <div style={styles.sectionsContainerStyles}>
+          <Sections />
+          {/* Main content for logged-in users would go here */}
+        </div>
       ) : (
+        // Renders the TypingText component for logged-out users
         <LandingPage />
       )}
     </div>
