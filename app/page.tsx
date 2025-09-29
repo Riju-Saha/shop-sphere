@@ -7,8 +7,7 @@ import logo from '../public/logo.png';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useAuth } from './context/page';
-// Assuming Sections is at './components/sections' based on your import path
-import Sections from './components/sections'; 
+// import Sections from './components/sections';
 
 interface Styles {
   pageWrapper: React.CSSProperties;
@@ -19,7 +18,7 @@ interface Styles {
   logoContainerStyles: React.CSSProperties;
   logoNameStyles: React.CSSProperties;
   iconStyles: React.CSSProperties;
-  sectionsContainerStyles: React.CSSProperties; 
+  sectionsContainerStyles: React.CSSProperties;
 }
 
 const styles: Styles = {
@@ -72,15 +71,13 @@ const styles: Styles = {
     width: '24px',
     height: '24px'
   },
-  // NEW style for the container that will hold Sections and other logged-in content
   sectionsContainerStyles: {
-    flex: 1, // Takes up remaining vertical space
-    overflowY: 'auto', // Allows scrolling for content
-    padding: '10px 0', // Example padding
+    flex: 1,
+    overflowY: 'auto',
+    padding: '10px 0',
   }
 };
 
-// Component for Cart Icon
 const CartIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -118,6 +115,14 @@ export default function Home() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
+  useEffect(() => {
+    if (!loading && user) {
+      const targetPath = user.type === 'seller' ? '/sellers' : '/buyers';
+      // Use router.replace to prevent the user from hitting the back button to return here
+      router.replace(targetPath);
+    }
+  }, [loading, user, router]);
+
   // Function to handle outside click to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -127,38 +132,39 @@ export default function Home() {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []); // Empty dependency array as dropdownRef is stable after initial render
+  }, []);
+
+  const handleLogin = () => router.push('/login');
+  const handleRegister = () => router.push('/register');
 
   const handleHome = () => {
     router.push('/');
   };
 
-  const handleLogin = () => {
-    router.push('/login');
-  };
+  // const handleLogin = () => {
+  //   router.push('/login');
+  // };
 
-  const handleRegister = () => {
-    router.push('/register');
-  };
+  // const handleRegister = () => {
+  //   router.push('/register');
+  // };
 
-  const handleLogout = () => {
-    setIsDropdownOpen(false);
-    logout(); // Call the logout function from context
-    router.push('/');
-  };
+  // const handleLogout = () => {
+  //   setIsDropdownOpen(false);
+  //   logout();
+  //   router.push('/');
+  // };
 
-  const handleProfileClick = () => {
-    setIsDropdownOpen(false);
-    // You can implement routing to a specific profile page here, e.g.:
-    // router.push(`/profile/${user.username}`); 
-    alert(`Routing to ${user?.name}'s Profile Page!`);
-  };
+  // const handleProfileClick = () => {
+  //   setIsDropdownOpen(false);
+  //   alert(`Routing to ${user?.name}'s Profile Page!`);
+  // };
 
-  const handleCartClick = () => {
-    // Implement routing to cart page here
-    // router.push('/cart'); 
-    alert("Routing to Cart Page!");
-  };
+  // const handleCartClick = () => {
+  //   alert("Routing to Cart Page!");
+  // };
+
+
 
 
   if (loading) {
@@ -168,87 +174,18 @@ export default function Home() {
   return (
     <div style={styles.pageWrapper}>
       <header style={styles.header}>
-        <div style={styles.logoContainerStyles} onClick={handleHome}>
+        <div style={styles.logoContainerStyles} onClick={() => router.push('/')}>
           <Image src={logo} alt="Shop Sphere Logo" style={{ height: '75px', width: 'auto' }} />
           <Button style={styles.logoNameStyles}>Shop Sphere</Button>
         </div>
         <div style={styles.buttonContainer}>
-          {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '35px' }}>
-              {/* Cart Icon */}
-              <div onClick={handleCartClick} style={{ cursor: 'pointer' }}>
-                <CartIcon />
-              </div>
-
-              {/* Profile Icon and Dropdown Container */}
-              <div
-                style={{ position: 'relative' }}
-                ref={dropdownRef}
-              >
-                {/* Profile Icon (Toggles Dropdown) */}
-                <svg
-                  onClick={() => setIsDropdownOpen(prev => !prev)}
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24" height="24" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-                  strokeLinejoin="round" style={styles.iconStyles}
-                >
-                  <circle cx="12" cy="7" r="4"></circle>
-                  <path d="M12 20s-8-2-8-5a8 8 0 0 1 16 0c0 3-8 5-8 5z"></path>
-                </svg>
-
-                {/* Dropdown Menu */}
-                {isDropdownOpen && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '100%',
-                      right: '0',
-                      backgroundColor: '#333',
-                      border: '1px solid #555',
-                      borderRadius: '4px',
-                      width: '150px',
-                      zIndex: 100,
-                      marginTop: '8px',
-                      boxShadow: '0 4px 8px rgba(0,0,0,0.5)'
-                    }}
-                  >
-                    <div
-                      onClick={handleProfileClick}
-                      style={{ padding: '10px', color: 'white', cursor: 'pointer', borderBottom: '1px solid #444' }}
-                    >
-                      My Profile
-                    </div>
-                    <div
-                      onClick={handleLogout}
-                      style={{ padding: '10px', color: 'red', cursor: 'pointer' }}
-                    >
-                      Logout
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <>
-              <Button style={styles.button} onClick={handleLogin}>Login</Button>
-              <Button style={styles.button} onClick={handleRegister}>Register</Button>
-            </>
-          )}
+          {/* Logged-out state buttons */}
+          <Button style={styles.button} onClick={handleLogin}>Login</Button>
+          <Button style={styles.button} onClick={handleRegister}>Register</Button>
         </div>
       </header>
 
-      {/* Conditional rendering for logged-in/logged-out content */}
-      {user ? (
-        // Renders Sections component and possibly other content for logged-in users
-        <div style={styles.sectionsContainerStyles}>
-          <Sections />
-          {/* Main content for logged-in users would go here */}
-        </div>
-      ) : (
-        // Renders the TypingText component for logged-out users
-        <LandingPage />
-      )}
+      <LandingPage />
     </div>
   );
 }

@@ -1,29 +1,25 @@
 import React, { useState, useEffect } from 'react';
 
-// Define the breakpoint for when the layout switches from stretched to scrollable
 const BREAKPOINT = 768;
 
-// Base styles for all elements
 const baseStyles = {
-    // Shared button style
     sectionButton: {
         padding: '8px 28px',
         border: '1px solid #444',
         borderRadius: '4px',
-        backgroundColor: '#1a1a1a',
         cursor: 'pointer',
         fontSize: '1rem',
         fontWeight: '500',
-        color: 'white',
         textAlign: 'center' as const,
-        minWidth: '100px', // Ensures a minimum readable size
+        minWidth: '100px',
+        transition: 'background-color 0.2s, color 0.2s',
     } as React.CSSProperties
 };
 
 export default function Sections() {
     const [isSmallScreen, setIsSmallScreen] = useState(false);
+    const [activeSection, setActiveSection] = useState('Men');
 
-    // Effect to check screen size and add/remove resize listener
     const checkScreenSize = () => {
         setIsSmallScreen(window.innerWidth < BREAKPOINT);
     };
@@ -36,9 +32,6 @@ export default function Sections() {
         };
     }, []);
 
-    // --- Dynamic Styles ---
-
-    // 1. Container Style (changes based on screen size)
     const containerStyle: React.CSSProperties = {
         width: '100%',
         display: 'flex',
@@ -47,80 +40,100 @@ export default function Sections() {
         color: 'white',
         margin: '20px 0',
         padding: '0 10px',
-        gap: '10px', // Consistent spacing between buttons
+        gap: '10px',
         flexDirection: 'row',
-
-        // --- Small Screen (Scrollable) ---
-        ...(isSmallScreen ? {
-            flexWrap: 'nowrap',    // Prevent wrapping
-            overflowX: 'auto',     // Enable horizontal scrolling
-            justifyContent: 'flex-start', // Align items to the left
-            msOverflowStyle: 'none',  // Hide scrollbar (IE/Edge)
-            scrollbarWidth: 'none',   // Hide scrollbar (Firefox)
-        } :
-            // --- Large Screen (Full Width/Justified) ---
-            {
-                flexWrap: 'wrap', // Allow wrapping if screen is massive, but primarily to enable justification
-                overflowX: 'hidden', // Disable scrolling
-                justifyContent: 'space-around', // Distribute space evenly
-            }),
     };
 
-    // 2. Button Style (changes flex properties based on screen size)
-    const buttonStyle: React.CSSProperties = {
-        ...baseStyles.sectionButton,
-
-        ...(isSmallScreen ? {
-            // Small Screen: Buttons MUST NOT shrink, enabling scroll
-            flexShrink: 0 as const,
-            flexGrow: 0 as const,
-            padding: '8px 20px', // Slightly less padding to accommodate more buttons
-        } :
-            // Large Screen: Buttons should GROW to fill the space
-            {
-                flexGrow: 1 as const,  // Crucial: allows button to grow and fill empty space
-                flexShrink: 1 as const,
-                maxWidth: '200px',     // Optional: Prevents buttons from becoming too wide on ultra-wide screens
-            }),
+    const contentStyle: React.CSSProperties = {
+        padding: '20px',
+        textAlign: 'center',
+        fontSize: '1.2rem',
+        color: 'white', // Assuming context color is white
+        backgroundColor: '#111', // Dark background for the content box
+        margin: '10px 0',
+        borderRadius: '8px',
     };
+
+    if (isSmallScreen) {
+        containerStyle.flexWrap = 'nowrap';
+        containerStyle.overflowX = 'auto';
+        containerStyle.justifyContent = 'flex-start';
+        (containerStyle as any).msOverflowStyle = 'none';
+        (containerStyle as any).scrollbarWidth = 'none';
+    } else {
+        containerStyle.flexWrap = 'wrap';
+        containerStyle.overflowX = 'hidden';
+        containerStyle.justifyContent = 'space-around';
+    }
 
 
     const handleSectionClick = (sectionName: string) => {
-        alert(`Navigating to ${sectionName} section.`);
+        setActiveSection(sectionName);
     };
 
+    const getFinalButtonStyle = (sectionName: string): React.CSSProperties => {
+        const isActive = activeSection === sectionName;
+
+        const style: React.CSSProperties = {
+            padding: baseStyles.sectionButton.padding,
+            border: baseStyles.sectionButton.border,
+            borderRadius: baseStyles.sectionButton.borderRadius,
+            cursor: baseStyles.sectionButton.cursor,
+            fontSize: baseStyles.sectionButton.fontSize,
+            fontWeight: baseStyles.sectionButton.fontWeight,
+            textAlign: baseStyles.sectionButton.textAlign,
+            minWidth: baseStyles.sectionButton.minWidth,
+            transition: baseStyles.sectionButton.transition,
+
+            // Active/Inactive Colors
+            backgroundColor: isActive ? 'white' : '#1a1a1a',
+            color: isActive ? 'black' : 'white',
+            borderColor: isActive ? 'white' : '#444',
+        };
+
+        if (isSmallScreen) {
+            style.flexShrink = 0 as const;
+            style.flexGrow = 0 as const;
+            style.padding = '8px 20px';
+        } else {
+            style.flexGrow = 1 as const;
+            style.flexShrink = 1 as const;
+            style.maxWidth = '200px';
+        }
+
+        return style;
+    };
+
+    const sections = ['Men', 'Women', 'Kids', 'Stationary', 'Electronics'];
+
     return (
-        <div style={containerStyle}>
-            <div
-                style={buttonStyle}
-                onClick={() => handleSectionClick('Men')}
-            >
-                Men
+        <>
+            <div style={containerStyle}>
+                {sections.map((section) => (
+                    <div
+                        key={section}
+                        style={getFinalButtonStyle(section)}
+                        onClick={() => handleSectionClick(section)}
+                    >
+                        {section}
+                    </div>
+                ))}
             </div>
-            <div
-                style={buttonStyle}
-                onClick={() => handleSectionClick('Women')}
-            >
-                Women
-            </div>
-            <div
-                style={buttonStyle}
-                onClick={() => handleSectionClick('Kids')}
-            >
-                Kids
-            </div>
-            <div
-                style={buttonStyle}
-                onClick={() => handleSectionClick('Stationary')}
-            >
-                Stationary
-            </div>
-            <div
-                style={buttonStyle}
-                onClick={() => handleSectionClick('Electronics')}
-            >
-                Electronics
-            </div>
-        </div>
+            {/* {sections.map((section) => (
+                activeSection === section && (
+                    <div
+                        key={section}
+                        style={contentStyle}
+                    >
+                        <p>This is the {section} section content.</p>
+                        {section === 'Men' && <p>Browse the latest collections for men here!</p>}
+                        {section === 'Women' && <p>Browse the latest collections for women here!</p>}
+                        {section === 'Kids' && <p>Browse the latest collections for kids here!</p>}
+                        {section === 'Stationary' && <p>Browse the latest collections for stationary here!</p>}
+                        {section === 'Electronics' && <p>See our top deals on gadgets and smart devices.</p>}
+                    </div>
+                )
+            ))} */}
+        </>
     )
 }
