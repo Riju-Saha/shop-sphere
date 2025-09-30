@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import logo from '../../public/logo.png';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '../context/page'; // Adjust path
-import Sections from '../components/sections'; // Adjust path
+import { useAuth } from '../context/page';
+import Sections from '../components/sections';
 import Autoplay from "embla-carousel-autoplay";
 
 import {
@@ -17,7 +17,6 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 
-// NOTE: Added distinct colors for visualization
 const carouselItems = [
   { id: 1, content: "First Product - Featured", color: "bg-blue-600" },
   { id: 2, content: "Second Product - Discount Alert", color: "bg-red-600" },
@@ -275,15 +274,12 @@ export default function Buyers() {
           >
             <CarouselContent className="-ml-0">
               {carouselItems.map((item) => (
-                <CarouselItem
-                  key={item.id}
-                  className="pl-0 basis-full"
-                >
+                <CarouselItem key={item.id} className="pl-0 basis-full">
                   <div className="p-0">
                     <div
-                      className={`flex flex-col aspect-[8/1] items-center justify-center p-3 rounded-xl text-white ${item.color}`}
+                      className={`flex flex-col aspect-[8/1] items-center justify-center p-1 rounded-xl text-white ${item.color}`}
                     >
-                      <h2 className="text-4xl font-bold">{item.content}</h2>
+                      <h2 className="text-xl font-bold">{item.content}</h2>
                       <p className="text-lg mt-2">Check out this special deal!</p>
                     </div>
                   </div>

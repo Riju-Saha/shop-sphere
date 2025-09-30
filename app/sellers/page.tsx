@@ -17,7 +17,6 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 
-// NOTE: Added distinct colors for visualization
 const carouselItems = [
   { id: 1, content: "First Product - Featured", color: "bg-blue-600" },
   { id: 2, content: "Second Product - Discount Alert", color: "bg-red-600" },
@@ -28,7 +27,9 @@ const carouselItems = [
 ];
 
 
-// --- Styles (kept consolidated for requested structure) ---
+// ====================================================================
+// CONSOLIDATED STYLES SECTION (formTransitionStyle REMOVED)
+// ====================================================================
 interface Styles {
   pageWrapper: React.CSSProperties;
   header: React.CSSProperties;
@@ -124,6 +125,11 @@ const dropdownStyles = {
   } as React.CSSProperties
 };
 
+const formInputStyles = {
+  input: { width: '100%', padding: '10px', border: '1px solid #555', borderRadius: '4px', backgroundColor: '#333', color: 'white' } as React.CSSProperties,
+  label: { display: 'block', marginBottom: '5px' } as React.CSSProperties
+};
+
 
 const CartIcon = () => (
   <svg
@@ -139,11 +145,49 @@ const CartIcon = () => (
   </svg>
 );
 
+// --- Product Form Component ---
+interface ProductFormProps {
+  onCancel: () => void;
+}
+
+const ProductForm: React.FC<ProductFormProps> = ({ onCancel }) => {
+  return (
+    <div style={{ padding: '20px', backgroundColor: '#1a1a1a', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', maxWidth: '600px', margin: '20px auto', color: 'white' }}>
+      <h2 style={{ fontSize: '1.8rem', marginBottom: '20px', borderBottom: '1px solid #444', paddingBottom: '10px' }}>Add New Product</h2>
+
+      <form onSubmit={(e) => { e.preventDefault(); alert("Product submitted!"); onCancel(); }}>
+        <div style={{ marginBottom: '15px' }}>
+          <label style={formInputStyles.label}>Product Name:</label>
+          <input type="text" required style={formInputStyles.input} />
+        </div>
+        <div style={{ marginBottom: '15px' }}>
+          <label style={formInputStyles.label}>Price:</label>
+          <input type="number" required style={formInputStyles.input} />
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+          <Button
+            type="button"
+            onClick={onCancel}
+            style={{ backgroundColor: '#444', color: 'white' }}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" style={styles.button}>
+            Submit Product
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
 
 export default function Sellers() { // Component named Sellers
   const router = useRouter();
   const { user, loading, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showForm, setShowForm] = useState(false) // State to control form visibility
   const dropdownRef = useRef(null);
 
   const plugin = React.useRef(
@@ -154,6 +198,7 @@ export default function Sellers() { // Component named Sellers
     })
   );
 
+  // --- RBAC and Redirect Logic ---
   useEffect(() => {
     if (!loading && !user) {
       router.replace('/login');
@@ -177,14 +222,15 @@ export default function Sellers() { // Component named Sellers
         return;
       }
 
-      // FIX 1: Authorization check MUST confirm user is a 'seller'
+      // Authorization check MUST confirm user is a 'seller'
       if (user.type !== 'seller') {
         alert(`Access Denied! Redirecting ${user.username} to login.`);
-        logout();
+        logout(); // Clears the token
         router.replace('/login');
       }
     }
   }, [loading, user, router, logout]);
+  // ---------------------------------
 
   const handleLogout = () => {
     setIsDropdownOpen(false);
@@ -201,7 +247,23 @@ export default function Sellers() { // Component named Sellers
     alert("Routing to Cart Page!");
   };
 
-  // FIX 2: Correct the render condition to match the authorization check (User MUST be 'seller')
+  const handleAddForm = () => {
+    setShowForm(true);
+  }
+
+  // FIX 1: Define formTransitionStyle inside the component where showForm is accessible
+  const formTransitionStyle: React.CSSProperties = {
+    transition: 'opacity 0.5s ease-in-out, max-height 0.5s ease-in-out',
+    opacity: showForm ? 1 : 0,
+    pointerEvents: showForm ? 'auto' : 'none',
+    maxHeight: showForm ? '1000px' : '0', // Adjust max-height for collapse effect
+    overflow: 'hidden',
+    display: 'flex',
+    justifyContent: 'center',
+  };
+
+
+  // RENDER CONDITION: Show minimal page if loading or unauthorized
   if (loading || !user || user.type !== 'seller') {
     return (
       <div style={{ color: 'white', backgroundColor: 'black', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -214,8 +276,8 @@ export default function Sellers() { // Component named Sellers
     <div style={styles.pageWrapper}>
       <header style={styles.header}>
         <div style={styles.logoContainerStyles} onClick={() => router.push('/')}>
+          {/* FIX: Add Image component here */}
           <Image src={logo} alt="Shop Sphere Logo" style={{ height: '75px', width: 'auto' }} />
-
           <Button style={styles.logoNameStyles}>Shop Sphere</Button>
         </div>
         <div style={styles.buttonContainer}>
@@ -232,7 +294,7 @@ export default function Sellers() { // Component named Sellers
               {/* Profile Icon (Toggles Dropdown) */}
               <svg
                 onClick={() => setIsDropdownOpen(prev => !prev)}
-                xmlns="http://www.w3.org/2000/svg"
+                xmlns="http://www.w3.org.org/2000/svg"
                 width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth="2" strokeLinecap="round"
                 strokeLinejoin="round" style={styles.iconStyles}
@@ -264,36 +326,54 @@ export default function Sellers() { // Component named Sellers
       </header>
 
       {/* Seller Main Content */}
+// USE THIS CORRECTED BLOCK:
+      {/* Seller Main Content */}
       <div style={styles.sectionsContainerStyles}>
         <Sections />
-        <div className="p-4 relative">
-          <Carousel
-            plugins={[plugin.current]}
-            opts={{ loop: true }}
-            className="relative w-full"
-          >
-            <CarouselContent className="-ml-0">
-              {carouselItems.map((item) => (
-                <CarouselItem
-                  key={item.id}
-                  className="pl-0 basis-full"
+
+        {/* 1. WELCOME MESSAGE (ALWAYS VISIBLE/SCROLLABLE) */}
+
+
+        {/* 2. PRODUCT ADD FORM (Visible/Hidden with transition) */}
+        <div style={formTransitionStyle}>
+          <ProductForm onCancel={() => setShowForm(false)} />
+        </div>
+
+        {/* 3. MAIN DASHBOARD ELEMENTS (Hides ONLY the Add Product button and Carousel) */}
+        <div style={{ display: showForm ? 'none' : 'block' }}>
+
+          <div className="p-4 relative ">
+            <div className="p-0">
+              <div
+                className={`flex flex-col aspect-[8/1] items-center justify-center p-3 rounded-xl text-white bg-gray-900`}
+              >
+                <Button
+                  onClick={handleAddForm}
+                  className="
+                            p-4 text-2xl font-bold cursor-pointer 
+                            sm:p-6 sm:text-3xl 
+                            md:p-8 md:text-4xl
+                            bg-[#0e6fdeff] hover:bg-[#0e6fdeff]/80
+                        "
                 >
-                  <div className="p-0">
-                    <div
-                      className={`flex flex-col aspect-[8/1] items-center justify-center p-3 rounded-xl text-white ${item.color}`}
-                    >
-                      <h2 className="text-4xl font-bold">{item.content}</h2>
-                      <p className="text-lg mt-2">Check out this special deal!</p>
-                    </div>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
+                  Add Product
+                </Button>
+              </div>
+            </div>
+          </div>
 
-            {/* <CarouselPrevious />
-            <CarouselNext /> */}
-
-          </Carousel>
+          {/* Carousel is now conditionally visible based on the showForm state */}
+          <div className="p-4 relative">
+            <Carousel
+              plugins={[plugin.current]}
+              opts={{ loop: true }}
+              className="relative w-full"
+            >
+              <CarouselContent className="-ml-0">
+                {/* ... Carousel Items ... */}
+              </CarouselContent>
+            </Carousel>
+          </div>
         </div>
         <div style={{ padding: '20px', color: 'white', textAlign: 'center' }}>
           <h1>Welcome, {user.name} (Seller)</h1>
