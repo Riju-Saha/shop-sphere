@@ -180,6 +180,14 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
     setSelectedSubcategory(e.target.value);
   };
 
+  const handleReset = () => {
+    setSelectedCategory('');
+    setSelectedSubcategory('');
+    setProductName('');
+    setProductPrice('');
+    onCancel(); // Close the form
+  };
+
   const applyFocusStyles = (e: React.FocusEvent<HTMLSelectElement | HTMLInputElement>, focus: boolean) => {
     const styleString = `border-color: ${formInputFocusStyle.borderColor}; box-shadow: ${formInputFocusStyle.boxShadow};`;
     if (focus) {
@@ -214,16 +222,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
       if (product) {
         console.log("Product added:", product);
         alert("Product added successfully!");
+        handleReset();
       } else {
         console.log("Failed to add product");
         alert("Product submission failed. Check console for details.");
       }
-
-      setSelectedCategory('');
-      setSelectedSubcategory('');
-      setProductName('');
-      setProductPrice('');
-      onCancel();
 
     } catch (error) {
       console.error("Error during product submission:", error);
@@ -259,25 +262,28 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
             </select>
           </div>
 
-          {/* Secondary Category Dropdown */}
-          {selectedCategory && (
-            <div style={{ flex: '1 1 48%' }}>
-              <label style={formInputStyles.label}>Product Type:</label>
-              <select
-                required
-                style={formInputStyles.input}
-                value={selectedSubcategory}
-                onChange={handleSubcategoryChange}
-                onFocus={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, true)}
-                onBlur={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, false)}
-              >
-                <option value="" disabled hidden>Select a Type</option>
-                {subcategories[selectedCategory as keyof typeof subcategories]?.map(sub => (
-                  <option key={sub} value={sub}>{sub}</option>
-                ))}
-              </select>
-            </div>
-          )}
+          <div style={{ flex: '1 1 48%' }}>
+            {selectedCategory && (
+              <div style={{ flex: '1 1 48%' }}>
+                <label style={formInputStyles.label}>Product Type:</label>
+                <select
+                  required
+                  style={formInputStyles.input}
+                  value={selectedSubcategory}
+                  onChange={handleSubcategoryChange}
+                  onFocus={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, true)}
+                  onBlur={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, false)}
+                >
+                  <option value="" disabled hidden>Select a Type</option>
+                  {subcategories[selectedCategory as keyof typeof subcategories]?.map(sub => (
+                    <option key={sub} value={sub}>{sub}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+
         </div>
 
         {/* Product Name Input */}
@@ -314,7 +320,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
           <Button
             type="button"
-            onClick={onCancel}
+            onClick={handleReset}
             style={{ backgroundColor: '#444', color: 'white' }}
           >
             Cancel
@@ -345,7 +351,6 @@ export default function Sellers() { // Component named Sellers
     })
   );
 
-  // --- RBAC and Redirect Logic ---
   useEffect(() => {
     if (!loading && !user) {
       router.replace('/login');
@@ -369,10 +374,9 @@ export default function Sellers() { // Component named Sellers
         return;
       }
 
-      // Authorization check MUST confirm user is a 'seller'
       if (user.type !== 'seller') {
         alert(`Access Denied! Redirecting ${user.username} to login.`);
-        logout(); // Clears the token
+        logout();
         router.replace('/login');
       }
     }
@@ -398,19 +402,17 @@ export default function Sellers() { // Component named Sellers
     setShowForm(true);
   }
 
-  // FIX 1: Define formTransitionStyle inside the component where showForm is accessible
   const formTransitionStyle: React.CSSProperties = {
     transition: 'opacity 0.5s ease-in-out, max-height 0.5s ease-in-out',
     opacity: showForm ? 1 : 0,
     pointerEvents: showForm ? 'auto' : 'none',
-    maxHeight: showForm ? '1000px' : '0', // Adjust max-height for collapse effect
+    maxHeight: showForm ? '1000px' : '0',
     overflow: 'hidden',
     display: 'flex',
     justifyContent: 'center',
   };
 
 
-  // RENDER CONDITION: Show minimal page if loading or unauthorized
   if (loading || !user || user.type !== 'seller') {
     return (
       <div style={{ color: 'white', backgroundColor: 'black', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -423,22 +425,18 @@ export default function Sellers() { // Component named Sellers
     <div style={styles.pageWrapper}>
       <header style={styles.header}>
         <div style={styles.logoContainerStyles} onClick={() => router.push('/')}>
-          {/* FIX: Add Image component here */}
           <Image src={logo} alt="Shop Sphere Logo" style={{ height: '75px', width: 'auto' }} />
           <Button style={styles.logoNameStyles}>Shop Sphere</Button>
         </div>
         <div style={styles.buttonContainer}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '35px' }}>
 
-            {/* 1. Cart Icon */}
             <div onClick={handleCartClick} style={{ cursor: 'pointer' }}>
               <CartIcon />
             </div>
 
-            {/* 2. Profile Icon and Dropdown Container */}
             <div style={{ position: 'relative' }} ref={dropdownRef}>
 
-              {/* Profile Icon (Toggles Dropdown) */}
               <svg
                 onClick={() => setIsDropdownOpen(prev => !prev)}
                 xmlns="http://www.w3.org.org/2000/svg"
@@ -479,7 +477,6 @@ export default function Sellers() { // Component named Sellers
           <ProductForm onCancel={() => setShowForm(false)} currentUser={user} />
         </div>
 
-        {/* 3. MAIN DASHBOARD ELEMENTS (Hides ONLY the Add Product button and Carousel) */}
         <div style={{ display: showForm ? 'none' : 'block' }}>
 
           <div className="p-4 relative ">
@@ -509,7 +506,6 @@ export default function Sellers() { // Component named Sellers
               className="relative w-full"
             >
               <CarouselContent className="-ml-0">
-                {/* ... Carousel Items ... */}
               </CarouselContent>
             </Carousel>
           </div>
