@@ -9,6 +9,11 @@
       ".read": true,
       ".write": true,
       ".indexOn": "username"
+    },
+    "products": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": "username"
     }
   }
 }

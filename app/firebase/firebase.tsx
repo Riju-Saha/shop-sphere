@@ -21,6 +21,15 @@ interface UserData {
   createdAt: Date;
 }
 
+interface ProductData {
+  username: string;
+  productCategory: string;
+  productSubCategory: string;
+  productName: string;
+  productPrice: string;
+  createdAt: Date;
+}
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -61,7 +70,7 @@ export const loginUserFromDb = async (username: string, password: string, userTy
 
     if (snapshot.exists()) {
       let userData = null;
-      let userEmail = null; 
+      let userEmail = null;
       snapshot.forEach((childSnapshot) => {
         const user = childSnapshot.val();
         if (user.password === password) {
@@ -84,3 +93,22 @@ export const loginUserFromDb = async (username: string, password: string, userTy
     return null;
   }
 };
+
+export const addProductToDb = async (productData: ProductData) => {
+  console.log("data i got", productData)
+  try {
+    let productRef: DatabaseReference;
+
+    productRef = ref(db, 'products');
+    console.log("procuct ref", productRef);
+
+    const newEntryRef = await push(productRef, productData);
+    console.log("new entry ref", newEntryRef);
+    console.log("Product added with key: ", newEntryRef.key);
+
+    return newEntryRef;
+  } catch (e) {
+    console.error("Error adding product: ", e);
+    throw new Error("Failed to register product to database.");
+  }
+}
