@@ -8,28 +8,10 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '../context/page'; // Adjust path
 import Sections from '../components/sections'; // Adjust path
 import Autoplay from "embla-carousel-autoplay";
+import { Carousel, CarouselContent } from "@/components/ui/carousel";
+import { addProductToDb } from '../firebase/firebase';
+import { Input } from '@/components/ui/input';
 
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-
-const carouselItems = [
-  { id: 1, content: "First Product - Featured", color: "bg-blue-600" },
-  { id: 2, content: "Second Product - Discount Alert", color: "bg-red-600" },
-  { id: 3, content: "Third Product - New Arrival", color: "bg-green-600" },
-  { id: 4, content: "Fourth Product - Summer Collection", color: "bg-yellow-600" },
-  { id: 5, content: "Fifth Product - Best Seller", color: "bg-purple-600" },
-  { id: 6, content: "Sixth Product - Limited Stock", color: "bg-pink-600" },
-];
-
-
-// ====================================================================
-// CONSOLIDATED STYLES SECTION (formTransitionStyle REMOVED)
-// ====================================================================
 interface Styles {
   pageWrapper: React.CSSProperties;
   header: React.CSSProperties;
@@ -125,9 +107,31 @@ const dropdownStyles = {
   } as React.CSSProperties
 };
 
+const formInputFocusStyle = {
+  borderColor: '#00aaff',
+  boxShadow: '0 0 0 3px rgba(14, 111, 222, 0.4)',
+};
+
 const formInputStyles = {
-  input: { width: '100%', padding: '10px', border: '1px solid #555', borderRadius: '4px', backgroundColor: '#333', color: 'white' } as React.CSSProperties,
-  label: { display: 'block', marginBottom: '5px' } as React.CSSProperties
+  input: {
+    width: '100%',
+    padding: '12px 15px',
+    border: '1px solid #0e6fdeff',
+    borderRadius: '8px',
+    backgroundColor: '#1f1f1f',
+    color: 'white',
+    fontSize: '1rem',
+    outline: 'none',
+    transition: 'border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+    '--tw-ring-color': 'transparent',
+  } as React.CSSProperties,
+  label: {
+    display: 'block',
+    marginBottom: '8px',
+    color: '#E0E0E0',
+    fontWeight: '600',
+    fontSize: '0.95rem'
+  } as React.CSSProperties
 };
 
 
@@ -145,25 +149,171 @@ const CartIcon = () => (
   </svg>
 );
 
-// --- Product Form Component ---
+const subcategories = {
+  Men: ['T-Shirts', 'Jeans', 'Jackets', 'Footwear'],
+  Women: ['Dresses', 'Skirts', 'Handbags', 'Jewelry'],
+  Kids: ['Toys', 'School Supplies', 'Childrens Clothing'],
+  Stationary: ['Pens', 'Notebooks', 'Art Supplies'],
+  Electronics: ['Phones', 'Laptops', 'Headphones', 'Cameras'],
+};
+
 interface ProductFormProps {
   onCancel: () => void;
+  currentUser: {
+    username: string;
+  } | null;
 }
 
-const ProductForm: React.FC<ProductFormProps> = ({ onCancel }) => {
-  return (
-    <div style={{ padding: '20px', backgroundColor: '#1a1a1a', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', maxWidth: '600px', margin: '20px auto', color: 'white' }}>
-      <h2 style={{ fontSize: '1.8rem', marginBottom: '20px', borderBottom: '1px solid #444', paddingBottom: '10px' }}>Add New Product</h2>
+const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
+  const currentUsername = currentUser?.username || 'N/A';
 
-      <form onSubmit={(e) => { e.preventDefault(); alert("Product submitted!"); onCancel(); }}>
+  // State variables for form inputs
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('');
+  const [productName, setProductName] = useState('');
+  const [productPrice, setProductPrice] = useState('');
+
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedCategory(e.target.value);
+    setSelectedSubcategory(''); // Reset subcategory when category changes
+  };
+
+  const handleSubcategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedSubcategory(e.target.value);
+  };
+
+  // Helper for focus styles (Unified type annotation)
+  const applyFocusStyles = (e: React.FocusEvent<HTMLSelectElement | HTMLInputElement>, focus: boolean) => {
+    const styleString = `border-color: ${formInputFocusStyle.borderColor}; box-shadow: ${formInputFocusStyle.boxShadow};`;
+    if (focus) {
+      e.currentTarget.style.cssText += styleString;
+    } else {
+      e.currentTarget.style.cssText = e.currentTarget.style.cssText.replace(styleString, '');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => { // Use React.FormEvent for strong typing
+    e.preventDefault();
+
+    // Check required fields before submission
+    if (!selectedCategory || !selectedSubcategory || !productName || !productPrice) {
+      alert("Please fill in all product details.");
+      return;
+    }
+
+    // FIX 1: Construct productData using the correct state variables
+    const productData = {
+      username: currentUsername,
+      productCategory: selectedCategory,
+      productSubCategory: selectedSubcategory,
+      productName: productName,
+      productPrice: productPrice,
+      createdAt: new Date(),
+    };
+
+    try {
+      const product = await addProductToDb(productData);
+
+      if (product) {
+        console.log("Product added:", product);
+        alert("Product added successfully!");
+      } else {
+        console.log("Failed to add product");
+        alert("Product submission failed. Check console for details.");
+      }
+
+      // FIX 2: Reset form state and close form
+      setSelectedCategory('');
+      setSelectedSubcategory('');
+      setProductName('');
+      setProductPrice('');
+      onCancel();
+
+    } catch (error) {
+      console.error("Error during product submission:", error);
+      alert("An unexpected error occurred during submission.");
+    }
+  };
+
+  return (
+    <div style={{ padding: '30px', backgroundColor: '#121212', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.7)', maxWidth: '700px', margin: '20px auto', color: 'white', border: '1px solid #2a2a2a' }}>
+      <h2 style={{ fontSize: '2rem', marginBottom: '25px', borderBottom: '1px solid #333', paddingBottom: '15px', textAlign: 'center', fontWeight: '700', color: '#E0E0E0' }}>
+        Add New Product
+      </h2>
+
+      <form onSubmit={handleSubmit}>
+        {/* Primary Category Dropdown */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', marginBottom: '15px' }}>
+          <div style={{ flex: '1 1 48%' }}>
+            <label style={formInputStyles.label}>Product Category:</label>
+            <select
+              required
+              style={formInputStyles.input}
+              value={selectedCategory}
+              onChange={handleCategoryChange}
+              onFocus={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, true)}
+              onBlur={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, false)}
+            >
+              <option value="" disabled hidden>Select a Category</option>
+              <option value="Men">Men</option>
+              <option value="Women">Women</option>
+              <option value="Kids">Kids</option>
+              <option value="Stationary">Stationary</option>
+              <option value="Electronics">Electronics</option>
+            </select>
+          </div>
+
+          {/* Secondary Category Dropdown */}
+          {selectedCategory && (
+            <div style={{ flex: '1 1 48%' }}>
+              <label style={formInputStyles.label}>Product Type:</label>
+              <select
+                required
+                style={formInputStyles.input}
+                value={selectedSubcategory}
+                onChange={handleSubcategoryChange}
+                onFocus={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, true)}
+                onBlur={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, false)}
+              >
+                <option value="" disabled hidden>Select a Type</option>
+                {subcategories[selectedCategory as keyof typeof subcategories]?.map(sub => (
+                  <option key={sub} value={sub}>{sub}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        {/* Product Name Input */}
         <div style={{ marginBottom: '15px' }}>
           <label style={formInputStyles.label}>Product Name:</label>
-          <input type="text" required style={formInputStyles.input} />
+          <Input
+            type="text"
+            required
+            style={formInputStyles.input}
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
+            placeholder='Product Name'
+            onFocus={(e) => applyFocusStyles(e as React.FocusEvent<HTMLInputElement>, true)}
+            onBlur={(e) => applyFocusStyles(e as React.FocusEvent<HTMLInputElement>, false)}
+          />
         </div>
+
+        {/* Product Price Input */}
         <div style={{ marginBottom: '15px' }}>
-          <label style={formInputStyles.label}>Price:</label>
-          <input type="number" required style={formInputStyles.input} />
+          <label style={formInputStyles.label}>Product Price:</label>
+          <Input
+            type="number"
+            required
+            style={formInputStyles.input}
+            value={productPrice}
+            onChange={(e) => setProductPrice(e.target.value)}
+            placeholder='Product Price'
+            onFocus={(e) => applyFocusStyles(e as React.FocusEvent<HTMLInputElement>, true)}
+            onBlur={(e) => applyFocusStyles(e as React.FocusEvent<HTMLInputElement>, false)}
+          />
         </div>
+
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
           <Button
@@ -181,6 +331,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel }) => {
     </div>
   );
 };
+
 
 
 export default function Sellers() { // Component named Sellers
@@ -326,20 +477,12 @@ export default function Sellers() { // Component named Sellers
       </header>
 
       {/* Seller Main Content */}
-// USE THIS CORRECTED BLOCK:
-      {/* Seller Main Content */}
       <div style={styles.sectionsContainerStyles}>
         <Sections />
-
-        {/* 1. WELCOME MESSAGE (ALWAYS VISIBLE/SCROLLABLE) */}
-
-
-        {/* 2. PRODUCT ADD FORM (Visible/Hidden with transition) */}
         <div style={formTransitionStyle}>
-          <ProductForm onCancel={() => setShowForm(false)} />
+          <ProductForm onCancel={() => setShowForm(false)} currentUser={user} />
         </div>
 
-        {/* 3. MAIN DASHBOARD ELEMENTS (Hides ONLY the Add Product button and Carousel) */}
         <div style={{ display: showForm ? 'none' : 'block' }}>
 
           <div className="p-4 relative ">
@@ -349,20 +492,17 @@ export default function Sellers() { // Component named Sellers
               >
                 <Button
                   onClick={handleAddForm}
-                  className="
-                            p-4 text-2xl font-bold cursor-pointer 
-                            sm:p-6 sm:text-3xl 
-                            md:p-8 md:text-4xl
-                            bg-[#0e6fdeff] hover:bg-[#0e6fdeff]/80
-                        "
-                >
+                  className="p-4 text-2xl font-bold cursor-pointer 
+                            sm:p-6 sm:text-3xl 
+                            md:p-8 md:text-4xl
+                            bg-[#0e6fdeff] hover:bg-[#0e6fdeff]/80
+                            ">
                   Add Product
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Carousel is now conditionally visible based on the showForm state */}
           <div className="p-4 relative">
             <Carousel
               plugins={[plugin.current]}
@@ -370,7 +510,6 @@ export default function Sellers() { // Component named Sellers
               className="relative w-full"
             >
               <CarouselContent className="-ml-0">
-                {/* ... Carousel Items ... */}
               </CarouselContent>
             </Carousel>
           </div>
