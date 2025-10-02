@@ -9,7 +9,6 @@ import { useAuth } from '../context/page'; // Adjust path
 import Sections from '../components/sections'; // Adjust path
 import Autoplay from "embla-carousel-autoplay";
 import { Carousel, CarouselContent } from "@/components/ui/carousel";
-import { addProductToDb } from '../firebase/firebase';
 import { Input } from '@/components/ui/input';
 
 interface Styles {
@@ -167,7 +166,6 @@ interface ProductFormProps {
 const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
   const currentUsername = currentUser?.username || 'N/A';
 
-  // State variables for form inputs
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [productName, setProductName] = useState('');
@@ -175,14 +173,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedCategory(e.target.value);
-    setSelectedSubcategory(''); // Reset subcategory when category changes
+    setSelectedSubcategory('');
   };
 
   const handleSubcategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedSubcategory(e.target.value);
   };
 
-  // Helper for focus styles (Unified type annotation)
   const applyFocusStyles = (e: React.FocusEvent<HTMLSelectElement | HTMLInputElement>, focus: boolean) => {
     const styleString = `border-color: ${formInputFocusStyle.borderColor}; box-shadow: ${formInputFocusStyle.boxShadow};`;
     if (focus) {
@@ -201,7 +198,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
       return;
     }
 
-    // FIX 1: Construct productData using the correct state variables
     const productData = {
       username: currentUsername,
       productCategory: selectedCategory,
@@ -211,28 +207,30 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
       createdAt: new Date(),
     };
 
-    try {
-      const product = await addProductToDb(productData);
+    alert("will be added")
 
-      if (product) {
-        console.log("Product added:", product);
-        alert("Product added successfully!");
-      } else {
-        console.log("Failed to add product");
-        alert("Product submission failed. Check console for details.");
-      }
+    // try {
+    //   const product = await addProductToDb(productData);
 
-      // FIX 2: Reset form state and close form
-      setSelectedCategory('');
-      setSelectedSubcategory('');
-      setProductName('');
-      setProductPrice('');
-      onCancel();
+    //   if (product) {
+    //     console.log("Product added:", product);
+    //     alert("Product added successfully!");
+    //   } else {
+    //     console.log("Failed to add product");
+    //     alert("Product submission failed. Check console for details.");
+    //   }
 
-    } catch (error) {
-      console.error("Error during product submission:", error);
-      alert("An unexpected error occurred during submission.");
-    }
+    //   // FIX 2: Reset form state and close form
+    //   setSelectedCategory('');
+    //   setSelectedSubcategory('');
+    //   setProductName('');
+    //   setProductPrice('');
+    //   onCancel();
+
+    // } catch (error) {
+    //   console.error("Error during product submission:", error);
+    //   alert("An unexpected error occurred during submission.");
+    // }
   };
 
   return (
@@ -476,13 +474,14 @@ export default function Sellers() { // Component named Sellers
         </div>
       </header>
 
-      {/* Seller Main Content */}
       <div style={styles.sectionsContainerStyles}>
         <Sections />
+
         <div style={formTransitionStyle}>
           <ProductForm onCancel={() => setShowForm(false)} currentUser={user} />
         </div>
 
+        {/* 3. MAIN DASHBOARD ELEMENTS (Hides ONLY the Add Product button and Carousel) */}
         <div style={{ display: showForm ? 'none' : 'block' }}>
 
           <div className="p-4 relative ">
@@ -492,11 +491,13 @@ export default function Sellers() { // Component named Sellers
               >
                 <Button
                   onClick={handleAddForm}
-                  className="p-4 text-2xl font-bold cursor-pointer 
+                  className="
+                            p-4 text-2xl font-bold cursor-pointer 
                             sm:p-6 sm:text-3xl 
                             md:p-8 md:text-4xl
                             bg-[#0e6fdeff] hover:bg-[#0e6fdeff]/80
-                            ">
+                          "
+                >
                   Add Product
                 </Button>
               </div>
@@ -510,6 +511,7 @@ export default function Sellers() { // Component named Sellers
               className="relative w-full"
             >
               <CarouselContent className="-ml-0">
+                {/* ... Carousel Items ... */}
               </CarouselContent>
             </Carousel>
           </div>

@@ -1,0 +1,14 @@
+{
+  "rules": {
+    "buyers": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": "username"
+    },
+    "sellers": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": "username"
+    }
+  }
+}
