@@ -235,83 +235,83 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
     }
   };
 
-  return (
-    <div style={{ padding: '30px', backgroundColor: '#121212', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.7)', maxWidth: '700px', margin: '20px auto', color: 'white', border: '1px solid #2a2a2a' }}>
-      <h2 style={{ fontSize: '2rem', marginBottom: '25px', borderBottom: '1px solid #333', paddingBottom: '15px', textAlign: 'center', fontWeight: '700', color: '#E0E0E0' }}>
-        Add New Product
-      </h2>
+  return (
+    <div style={{ padding: '30px', backgroundColor: '#121212', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.7)', maxWidth: '700px', margin: '20px auto', color: 'white', border: '1px solid #2a2a2a' }}>
+      <h2 style={{ fontSize: '2rem', marginBottom: '25px', borderBottom: '1px solid #333', paddingBottom: '15px', textAlign: 'center', fontWeight: '700', color: '#E0E0E0' }}>
+            Add New Product
+        </h2>
 
-      <form onSubmit={handleSubmit}>
-        {/* Primary Category Dropdown */}
+      <form onSubmit={handleSubmit}>
+        {/* Primary Category Dropdown */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', marginBottom: '15px' }}>
-          <div style={{ flex: '1 1 48%' }}>
-            <label style={formInputStyles.label}>Product Category:</label>
-            <select
-              required
-              style={formInputStyles.input}
-              value={selectedCategory}
-              onChange={handleCategoryChange}
-              onFocus={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, true)}
-              onBlur={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, false)}
-            >
-              <option value="" disabled hidden>Select a Category</option>
-              <option value="Men">Men</option>
-              <option value="Women">Women</option>
-              <option value="Kids">Kids</option>
-              <option value="Stationary">Stationary</option>
-              <option value="Electronics">Electronics</option>
-            </select>
-          </div>
-
-          {/* Secondary Category Dropdown */}
-          {selectedCategory && (
             <div style={{ flex: '1 1 48%' }}>
-              <label style={formInputStyles.label}>Product Type:</label>
-              <select
-                required
-                style={formInputStyles.input}
-                value={selectedSubcategory}
-                onChange={handleSubcategoryChange}
-                onFocus={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, true)}
-                onBlur={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, false)}
-              >
-                <option value="" disabled hidden>Select a Type</option>
-                {subcategories[selectedCategory as keyof typeof subcategories]?.map(sub => (
-                  <option key={sub} value={sub}>{sub}</option>
-                ))}
-              </select>
+                <label style={formInputStyles.label}>Product Category:</label>
+                <select
+                    required
+                    style={formInputStyles.input}
+                    value={selectedCategory}
+                    onChange={handleCategoryChange}
+                    onFocus={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, true)}
+                    onBlur={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, false)}
+                >
+                    <option value="" disabled hidden>Select a Category</option>
+                    <option value="Men">Men</option>
+                    <option value="Women">Women</option>
+                    <option value="Kids">Kids</option>
+                    <option value="Stationary">Stationary</option>
+                    <option value="Electronics">Electronics</option>
+                </select>
             </div>
-          )}
+            
+            {/* Secondary Category Dropdown */}
+            {selectedCategory && (
+                <div style={{ flex: '1 1 48%' }}>
+                    <label style={formInputStyles.label}>Product Type:</label>
+                    <select
+                        required
+                        style={formInputStyles.input}
+                        value={selectedSubcategory}
+                        onChange={handleSubcategoryChange}
+                        onFocus={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, true)}
+                        onBlur={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, false)}
+                    >
+                        <option value="" disabled hidden>Select a Type</option>
+                        {subcategories[selectedCategory as keyof typeof subcategories]?.map(sub => (
+                            <option key={sub} value={sub}>{sub}</option>
+                        ))}
+                    </select>
+                </div>
+            )}
         </div>
-
+        
         {/* Product Name Input */}
         <div style={{ marginBottom: '15px' }}>
-          <label style={formInputStyles.label}>Product Name:</label>
-          <Input
-            type="text"
-            required
-            style={formInputStyles.input}
-            value={productName}
-            onChange={(e) => setProductName(e.target.value)}
-            placeholder='Product Name'
-            onFocus={(e) => applyFocusStyles(e as React.FocusEvent<HTMLInputElement>, true)}
-            onBlur={(e) => applyFocusStyles(e as React.FocusEvent<HTMLInputElement>, false)}
-          />
+            <label style={formInputStyles.label}>Product Name:</label>
+            <Input 
+                type="text" 
+                required 
+                style={formInputStyles.input} 
+                value={productName} 
+                onChange={(e) => setProductName(e.target.value)} 
+                placeholder='Product Name' 
+                onFocus={(e) => applyFocusStyles(e as React.FocusEvent<HTMLInputElement>, true)}
+                onBlur={(e) => applyFocusStyles(e as React.FocusEvent<HTMLInputElement>, false)}
+            />
         </div>
-
+        
         {/* Product Price Input */}
         <div style={{ marginBottom: '15px' }}>
-          <label style={formInputStyles.label}>Product Price:</label>
-          <Input
-            type="number"
-            required
-            style={formInputStyles.input}
-            value={productPrice}
-            onChange={(e) => setProductPrice(e.target.value)}
-            placeholder='Product Price'
-            onFocus={(e) => applyFocusStyles(e as React.FocusEvent<HTMLInputElement>, true)}
-            onBlur={(e) => applyFocusStyles(e as React.FocusEvent<HTMLInputElement>, false)}
-          />
+            <label style={formInputStyles.label}>Product Price:</label>
+            <Input 
+                type="number" 
+                required 
+                style={formInputStyles.input} 
+                value={productPrice} 
+                onChange={(e) => setProductPrice(e.target.value)} 
+                placeholder='Product Price' 
+                onFocus={(e) => applyFocusStyles(e as React.FocusEvent<HTMLInputElement>, true)}
+                onBlur={(e) => applyFocusStyles(e as React.FocusEvent<HTMLInputElement>, false)}
+            />
         </div>
 
 
