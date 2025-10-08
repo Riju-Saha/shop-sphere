@@ -13,8 +13,6 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
 } from "@/components/ui/carousel";
 
 const carouselItems = [
@@ -27,7 +25,6 @@ const carouselItems = [
 ];
 
 
-// --- Styles (kept consolidated for requested structure) ---
 interface Styles {
   pageWrapper: React.CSSProperties;
   header: React.CSSProperties;
@@ -123,6 +120,27 @@ const dropdownStyles = {
   } as React.CSSProperties
 };
 
+interface CategoryCardProps {
+  category: string;
+  subcategories: string[];
+}
+
+const CategoryCard: React.FC<CategoryCardProps> = ({ category, subcategories }) => {
+  return (
+    <div style={{ padding: '20px', margin: '20px', border: '1px solid #333', borderRadius: '8px', backgroundColor: '#1a1a1a', color: 'white' }}>
+      <h3 style={{ fontSize: '1.5rem', marginBottom: '15px', borderBottom: '1px solid #555', paddingBottom: '10px' }}>
+        {category} Categories
+      </h3>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+        {subcategories.map(sub => (
+          <div key={sub} style={{ padding: '10px 15px', borderRadius: '6px', backgroundColor: '#333', cursor: 'pointer', transition: 'background-color 0.2s', fontSize: '0.9rem' }}>
+            {sub}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const CartIcon = () => (
   <svg
@@ -138,11 +156,20 @@ const CartIcon = () => (
   </svg>
 );
 
+const subcategories = {
+  Men: ['T-Shirts', 'Jeans', 'Watches', 'Footwears'],
+  Women: ['Tops', 'Watches', 'Handbags', 'Jewelry'],
+  Kids: ['Toys', 'School Supplies', 'Childrens Clothing'],
+  Stationary: ['Pens', 'Notebooks', 'Art Supplies'],
+  Electronics: ['Phones', 'Laptops', 'Headphones', 'Cameras'],
+};
+
 
 export default function Buyers() {
   const router = useRouter();
   const { user, loading, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<'All' | keyof typeof subcategories>('Men');
   const dropdownRef = useRef(null);
 
   const plugin = React.useRef(
@@ -176,14 +203,17 @@ export default function Buyers() {
         return;
       }
 
-      // FIX: Authorization check must match the page (Buyer)
       if (user.type !== 'buyer') {
         alert(`Access Denied! Redirecting ${user.username} to login.`);
-        logout(); // CRUCIAL: Clear the token
+        logout();
         router.replace('/login');
       }
     }
   }, [loading, user, router, logout]);
+
+  const handleCategorySelection = (category: keyof typeof subcategories | 'All') => {
+    setActiveSection(category);
+  }
 
   const handleLogout = () => {
     setIsDropdownOpen(false);
@@ -200,8 +230,6 @@ export default function Buyers() {
     alert("Routing to Cart Page!");
   };
 
-  // FIX: Modified render condition to correctly show redirect message 
-  // when unauthorized (and user is present, but wrong type) or loading.
   if (loading || !user || (user && user.type !== 'buyer')) {
     return (
       <div style={{ color: 'white', backgroundColor: 'black', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -263,9 +291,8 @@ export default function Buyers() {
         </div>
       </header>
 
-      {/* Buyer Main Content */}
       <div style={styles.sectionsContainerStyles}>
-        <Sections />
+        <Sections onCategoryClick={handleCategorySelection} />
         <div className="p-4 relative">
           <Carousel
             plugins={[plugin.current]}
@@ -286,12 +313,14 @@ export default function Buyers() {
                 </CarouselItem>
               ))}
             </CarouselContent>
-
-            {/* <CarouselPrevious />
-            <CarouselNext /> */}
-
           </Carousel>
         </div>
+        {activeSection !== 'All' && subcategories[activeSection] && (
+          <CategoryCard
+            category={activeSection}
+            subcategories={subcategories[activeSection]}
+          />
+        )}
         <div style={{ padding: '20px', color: 'white', textAlign: 'center' }}>
           <h1>Welcome, {user.name} (Buyer)</h1>
           <p>This is your buyer dashboard content.</p>

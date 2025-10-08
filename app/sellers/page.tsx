@@ -7,8 +7,6 @@ import logo from '../../public/logo.png';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../context/page';
 import Sections from '../components/sections';
-import Autoplay from "embla-carousel-autoplay";
-import { Carousel, CarouselContent } from "@/components/ui/carousel";
 import { Input } from '@/components/ui/input';
 import { addProductToDb } from '../firebase/firebase';
 
@@ -149,8 +147,8 @@ const CartIcon = () => (
 );
 
 const subcategories = {
-  Men: ['T-Shirts', 'Jeans', 'Jackets', 'Footwear'],
-  Women: ['Dresses', 'Skirts', 'Handbags', 'Jewelry'],
+  Men: ['T-Shirts', 'Jeans', 'Watches', 'Footwears'],
+  Women: ['Tops', 'Watches', 'Handbags', 'Jwellery'],
   Kids: ['Toys', 'School Supplies', 'Childrens Clothing'],
   Stationary: ['Pens', 'Notebooks', 'Art Supplies'],
   Electronics: ['Phones', 'Laptops', 'Headphones', 'Cameras'],
@@ -162,6 +160,29 @@ interface ProductFormProps {
     username: string;
   } | null;
 }
+
+interface CategoryCardProps {
+  category: string;
+  subcategories: string[];
+}
+
+const CategoryCard: React.FC<CategoryCardProps> = ({ category, subcategories }) => {
+  const router = useRouter();
+  return (
+    <div style={{ padding: '20px', margin: '20px', border: '1px solid #333', borderRadius: '8px', backgroundColor: '#1a1a1a', color: 'white' }}>
+      <h3 style={{ fontSize: '1.5rem', marginBottom: '15px', borderBottom: '1px solid #555', paddingBottom: '10px' }}>
+        {category} Categories
+      </h3>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+        {subcategories.map(sub => (
+          <div key={sub} onClick={() => {router.push(`sellers/${category}/${sub}`);}} style={{ padding: '10px 15px', borderRadius: '6px', backgroundColor: '#333', cursor: 'pointer', transition: 'background-color 0.2s', fontSize: '0.9rem' }}>
+            {sub}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
   const currentUsername = currentUser?.username || 'N/A';
@@ -185,7 +206,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
     setSelectedSubcategory('');
     setProductName('');
     setProductPrice('');
-    onCancel(); // Close the form
+    onCancel();
   };
 
   const applyFocusStyles = (e: React.FocusEvent<HTMLSelectElement | HTMLInputElement>, focus: boolean) => {
@@ -207,6 +228,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
 
     const productData = {
       username: currentUsername,
+      usertype: "sellers",
       productCategory: selectedCategory,
       productSubCategory: selectedSubcategory,
       productName: productName,
@@ -334,22 +356,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
   );
 };
 
-
-
 export default function Sellers() { // Component named Sellers
   const router = useRouter();
   const { user, loading, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [showForm, setShowForm] = useState(false) // State to control form visibility
+  const [showForm, setShowForm] = useState(false);
+  const [activeSection, setActiveSection] = useState<'All' | keyof typeof subcategories>('Men');
   const dropdownRef = useRef(null);
-
-  const plugin = React.useRef(
-    Autoplay({
-      delay: 3000,
-      stopOnInteraction: false,
-      stopOnMouseEnter: true,
-    })
-  );
 
   useEffect(() => {
     if (!loading && !user) {
@@ -381,13 +394,27 @@ export default function Sellers() { // Component named Sellers
       }
     }
   }, [loading, user, router, logout]);
-  // ---------------------------------
+
+  const handleCategorySelection = (category: keyof typeof subcategories | 'All') => {
+    setShowForm(false);
+    setActiveSection(category);
+  }
+
+  const handleFormClose = () => {
+    setShowForm(false);
+    setActiveSection('Men');
+  }
 
   const handleLogout = () => {
     setIsDropdownOpen(false);
     logout();
     router.push('/');
   };
+
+  const handleAddForm = () => {
+    setActiveSection('Men');
+    setShowForm(true);
+  }
 
   const handleProfileClick = () => {
     setIsDropdownOpen(false);
@@ -397,10 +424,6 @@ export default function Sellers() { // Component named Sellers
   const handleCartClick = () => {
     alert("Routing to Cart Page!");
   };
-
-  const handleAddForm = () => {
-    setShowForm(true);
-  }
 
   const formTransitionStyle: React.CSSProperties = {
     transition: 'opacity 0.5s ease-in-out, max-height 0.5s ease-in-out',
@@ -448,7 +471,6 @@ export default function Sellers() { // Component named Sellers
                 <path d="M12 20s-8-2-8-5a8 8 0 0 1 16 0c0 3-8 5-8 5z"></path>
               </svg>
 
-              {/* Dropdown Menu */}
               {isDropdownOpen && (
                 <div style={dropdownStyles.menu}>
                   <div
@@ -469,50 +491,36 @@ export default function Sellers() { // Component named Sellers
           </div>
         </div>
       </header>
-
       <div style={styles.sectionsContainerStyles}>
-        <Sections />
-
+        <Sections onCategoryClick={handleCategorySelection} />
         <div style={formTransitionStyle}>
           <ProductForm onCancel={() => setShowForm(false)} currentUser={user} />
         </div>
 
         <div style={{ display: showForm ? 'none' : 'block' }}>
-
           <div className="p-4 relative ">
             <div className="p-0">
               <div
-                className={`flex flex-col aspect-[8/1] items-center justify-center p-3 rounded-xl text-white bg-gray-900`}
+                className={`flex flex-col items-center justify-center rounded-xl text-white p-1`}
               >
-                <Button
-                  onClick={handleAddForm}
-                  className="
-                            p-4 text-2xl font-bold cursor-pointer 
-                            sm:p-6 sm:text-3xl 
-                            md:p-8 md:text-4xl
-                            bg-[#0e6fdeff] hover:bg-[#0e6fdeff]/80
-                          "
-                >
+                <Button onClick={handleAddForm} className="p-2 text-xl font-bold cursor-pointer bg-[#0e6fdeff] hover:bg-[#0e6fdeff]/80">
                   Add Product
                 </Button>
               </div>
             </div>
           </div>
 
-          <div className="p-4 relative">
-            <Carousel
-              plugins={[plugin.current]}
-              opts={{ loop: true }}
-              className="relative w-full"
-            >
-              <CarouselContent className="-ml-0">
-              </CarouselContent>
-            </Carousel>
+          {activeSection !== 'All' && subcategories[activeSection] && (
+            <CategoryCard
+              category={activeSection}
+              subcategories={subcategories[activeSection]}
+            />
+          )}
+
+          <div style={{ padding: '20px', color: 'white', textAlign: 'center' }}>
+            <h1>Welcome, {user.username} (Seller)</h1>
+            <p>This is your seller dashboard content.</p>
           </div>
-        </div>
-        <div style={{ padding: '20px', color: 'white', textAlign: 'center' }}>
-          <h1>Welcome, {user.name} (Seller)</h1>
-          <p>This is your seller dashboard content.</p>
         </div>
       </div>
     </div>

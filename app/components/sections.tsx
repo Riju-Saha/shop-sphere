@@ -16,7 +16,10 @@ const baseStyles = {
     } as React.CSSProperties
 };
 
-export default function Sections() {
+const subcategoriesKeys = ['Men', 'Women', 'Kids', 'Stationary', 'Electronics'] as const;
+type CategoryKey = typeof subcategoriesKeys[number] | 'All';
+
+export default function Sections({ onCategoryClick }: { onCategoryClick: (category: CategoryKey) => void }) {
     const [isSmallScreen, setIsSmallScreen] = useState(false);
     const [activeSection, setActiveSection] = useState('Men');
 
@@ -32,6 +35,10 @@ export default function Sections() {
         };
     }, []);
 
+        useEffect(() => {
+        onCategoryClick('Men');
+    }, []); 
+
     const containerStyle: React.CSSProperties = {
         width: '100%',
         display: 'flex',
@@ -42,16 +49,6 @@ export default function Sections() {
         padding: '0 10px',
         gap: '10px',
         flexDirection: 'row',
-    };
-
-    const contentStyle: React.CSSProperties = {
-        padding: '20px',
-        textAlign: 'center',
-        fontSize: '1.2rem',
-        color: 'white', // Assuming context color is white
-        backgroundColor: '#111', // Dark background for the content box
-        margin: '10px 0',
-        borderRadius: '8px',
     };
 
     if (isSmallScreen) {
@@ -69,6 +66,7 @@ export default function Sections() {
 
     const handleSectionClick = (sectionName: string) => {
         setActiveSection(sectionName);
+        onCategoryClick(sectionName as CategoryKey);
     };
 
     const getFinalButtonStyle = (sectionName: string): React.CSSProperties => {
@@ -85,10 +83,9 @@ export default function Sections() {
             minWidth: baseStyles.sectionButton.minWidth,
             transition: baseStyles.sectionButton.transition,
 
-            // Active/Inactive Colors
-            backgroundColor: isActive ? 'white' : '#1a1a1a',
-            color: isActive ? 'black' : 'white',
-            borderColor: isActive ? 'white' : '#444',
+            backgroundColor: isActive ? '#0e6fde' : '#1a1a1a',
+            color: isActive ? 'white' : 'white',
+            borderColor: isActive ? '#0e6fde' : '#444',
         };
 
         if (isSmallScreen) {
@@ -119,21 +116,6 @@ export default function Sections() {
                     </div>
                 ))}
             </div>
-            {/* {sections.map((section) => (
-                activeSection === section && (
-                    <div
-                        key={section}
-                        style={contentStyle}
-                    >
-                        <p>This is the {section} section content.</p>
-                        {section === 'Men' && <p>Browse the latest collections for men here!</p>}
-                        {section === 'Women' && <p>Browse the latest collections for women here!</p>}
-                        {section === 'Kids' && <p>Browse the latest collections for kids here!</p>}
-                        {section === 'Stationary' && <p>Browse the latest collections for stationary here!</p>}
-                        {section === 'Electronics' && <p>See our top deals on gadgets and smart devices.</p>}
-                    </div>
-                )
-            ))} */}
         </>
-    )
+    );
 }
