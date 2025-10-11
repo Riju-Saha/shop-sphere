@@ -1,16 +1,28 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import logo from '../../../../public/logo.png';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../../../context/page';
+import { getSellerProducts } from '@/app/firebase/firebase';
 
 interface StoredUser {
   username: string;
   type: string;
 }
+
+interface Product {
+  key: string;
+  productName: string;
+  productPrice: number;
+  productCategory: string;
+  productSubCategory: string;
+  dateAdded: string;
+}
+
+type SortOption = 'date_desc' | 'price_low' | 'price_high';
 
 interface Styles {
   pageWrapper: React.CSSProperties;
@@ -22,7 +34,9 @@ interface Styles {
   logoNameStyles: React.CSSProperties;
   iconStyles: React.CSSProperties;
   sectionsContainerStyles: React.CSSProperties;
-}
+  productGrid: React.CSSProperties;
+  filterSidebar: React.CSSProperties;
+};
 
 const styles: Styles = {
   pageWrapper: {
@@ -78,6 +92,20 @@ const styles: Styles = {
     flex: 1,
     overflowY: 'auto',
     padding: '10px 0',
+  },
+  productGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '20px',
+    padding: '20px',
+  },
+  filterSidebar: {
+    width: '250px',
+    padding: '20px',
+    backgroundColor: '#1e1e1e',
+    borderRight: '1px solid #333',
+    height: '100%',
+    overflowY: 'auto',
   }
 };
 
@@ -111,8 +139,10 @@ export default function Jeans() {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [jeansProducts, setJeansProducts] = useState<any[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const dropdownRef = useRef(null);
-
+  const [sortOption, setSortOption] = useState<SortOption>('date_desc');
   const [currentUsername, setCurrentUsername] = useState('Guest');
 
   useEffect(() => {
@@ -129,6 +159,48 @@ export default function Jeans() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    const category = 'Men';
+    const subCategory = 'Jeans';
+
+    if (currentUsername && currentUsername !== 'Guest') {
+      const fetchProducts = async () => {
+        setIsLoadingProducts(true);
+        const products = await getSellerProducts(currentUsername, category, subCategory);
+        const productsWithDate = products.map((p, index) => ({
+          ...p,
+          productPrice: Number(p.productPrice),
+          dateAdded: p.dateAdded || new Date(Date.now() - index * 60000).toISOString(),
+        }));
+        setJeansProducts(products);
+        setIsLoadingProducts(false);
+      };
+      fetchProducts();
+    }
+  }, [currentUsername]);
+
+  const handleSortChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortOption(event.target.value as SortOption);
+  };
+
+  const sortedJeansProducts = useMemo(() => {
+    let productsCopy = [...jeansProducts];
+
+    if (sortOption === 'date_desc') {
+      return productsCopy.reverse();
+    }
+    return productsCopy.sort((a, b) => {
+      switch (sortOption) {
+        case 'price_low':
+          return a.productPrice - b.productPrice;
+        case 'price_high':
+          return b.productPrice - a.productPrice;
+        default:
+          return 0;
+      }
+    });
+  }, [jeansProducts, sortOption]);
 
   const handleProfileClick = () => {
     setIsDropdownOpen(false);
@@ -156,7 +228,7 @@ export default function Jeans() {
   const handleCartClick = () => {
     alert("Routing to Cart Page!");
   };
-  
+
   return (
 
     <div style={styles.pageWrapper}>
@@ -205,9 +277,72 @@ export default function Jeans() {
           </div>
         </div>
       </header>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
-      <div style={{ padding: '20px', color: 'white' }}>
-        Username is: {currentUsername || 'Loading...'}
+        <div style={styles.filterSidebar}>
+          <h3 style={{ color: '#0e6fdeff', marginBottom: '20px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>Filter & Sort</h3>
+
+          <div style={{ marginBottom: '20px' }}>
+            <h4 style={{ color: 'white', marginBottom: '10px' }}>Sort By</h4>
+            <select
+              style={{ width: '100%', padding: '8px', borderRadius: '4px', backgroundColor: '#333', border: 'none', color: 'white' }}
+              value={sortOption}
+              onChange={handleSortChange}
+            >
+              <option value="date_desc">Date Added (Newest)</option>
+              <option value="price_low">Price (Low to High)</option>
+              <option value="price_high">Price (High to Low)</option>
+            </select>
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <h4 style={{ color: 'white', marginBottom: '10px' }}>Inventory Status</h4>
+            <label style={{ display: 'block', color: 'white', marginBottom: '5px' }}>
+              <input type="checkbox" style={{ marginRight: '8px' }} /> In Stock
+            </label>
+            <label style={{ display: 'block', color: 'white' }}>
+              <input type="checkbox" style={{ marginRight: '8px' }} /> Out of Stock
+            </label>
+          </div>
+        </div>
+
+        <div style={styles.sectionsContainerStyles}>
+          <h2 style={{ color: 'white', padding: '0 20px', marginBottom: '10px' }}>Inventory: Men's Jeans ({sortedJeansProducts.length})</h2>
+
+          {isLoadingProducts && <p style={{ color: 'gray', padding: '0 20px' }}>Loading products...</p>}
+
+          {!isLoadingProducts && sortedJeansProducts.length === 0 && currentUsername !== 'Guest' && (
+            <p style={{ color: 'gray', padding: '0 20px' }}>No Jeans products found for this seller.</p>
+          )}
+
+          <div style={styles.productGrid}>
+            {sortedJeansProducts.map((product, i) => (
+              <div
+                key={product.key || i}
+                style={{
+                  backgroundColor: '#1f1f1f',
+                  padding: '15px',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.4)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div style={{ height: '150px', backgroundColor: '#333', borderRadius: '4px', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ color: '#0e6fdeff' }}>Product Image</span>
+                </div>
+
+                <h3>{product.productName || 'Unnamed Product'}</h3>
+                <p style={{ color: 'lightgray', fontSize: '0.9rem', margin: '5px 0' }}>Category: {product.productCategory || 'N/A'} / {product.productSubCategory || 'N/A'}</p>
+                <p style={{ color: 'lightgray', fontSize: '0.9rem', margin: '5px 0' }}>Name: {product.productName}</p>
+                <p style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#00aaff' }}>Price: ${Number(product.productPrice).toFixed(2)}</p>
+
+                <Button style={{ marginTop: '10px', backgroundColor: '#0e6fdeff' }}>Edit Details</Button>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )

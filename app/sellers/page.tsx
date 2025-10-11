@@ -218,7 +218,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => { // Use React.FormEvent for strong typing
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!selectedCategory || !selectedSubcategory || !productName || !productPrice) {
@@ -235,8 +235,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
       productPrice: productPrice,
       createdAt: new Date(),
     };
-
-    // alert("will be added")
 
     try {
       const product = await addProductToDb(productData);
