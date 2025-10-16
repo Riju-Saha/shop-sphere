@@ -120,28 +120,6 @@ const dropdownStyles = {
   } as React.CSSProperties
 };
 
-interface CategoryCardProps {
-  category: string;
-  subcategories: string[];
-}
-
-const CategoryCard: React.FC<CategoryCardProps> = ({ category, subcategories }) => {
-  return (
-    <div style={{ padding: '20px', margin: '20px', border: '1px solid #333', borderRadius: '8px', backgroundColor: '#1a1a1a', color: 'white' }}>
-      <h3 style={{ fontSize: '1.5rem', marginBottom: '15px', borderBottom: '1px solid #555', paddingBottom: '10px' }}>
-        {category} Categories
-      </h3>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
-        {subcategories.map(sub => (
-          <div key={sub} style={{ padding: '10px 15px', borderRadius: '6px', backgroundColor: '#333', cursor: 'pointer', transition: 'background-color 0.2s', fontSize: '0.9rem' }}>
-            {sub}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
 const CartIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -158,17 +136,40 @@ const CartIcon = () => (
 
 const subcategories = {
   Men: ['T-Shirts', 'Jeans', 'Watches', 'Footwears'],
-  Women: ['Tops', 'Watches', 'Handbags', 'Jewelry'],
+  Women: ['Tops', 'Watches', 'Handbags', 'Jwellery'],
   Kids: ['Toys', 'School Supplies', 'Childrens Clothing'],
   Stationary: ['Pens', 'Notebooks', 'Art Supplies'],
   Electronics: ['Phones', 'Laptops', 'Headphones', 'Cameras'],
 };
 
+interface CategoryCardProps {
+  category: string;
+  subcategories: string[];
+}
+
+const CategoryCard: React.FC<CategoryCardProps> = ({ category, subcategories }) => {
+  const router = useRouter();
+  return (
+    <div style={{ padding: '20px', margin: '20px', border: '1px solid #333', borderRadius: '8px', backgroundColor: '#1a1a1a', color: 'white' }}>
+      <h3 style={{ fontSize: '1.5rem', marginBottom: '15px', borderBottom: '1px solid #555', paddingBottom: '10px' }}>
+        {category} Categories
+      </h3>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+        {subcategories.map(sub => (
+          <div key={sub} onClick={() => { router.push(`buyers/${category}/${sub}`); }} style={{ padding: '10px 15px', borderRadius: '6px', backgroundColor: '#333', cursor: 'pointer', transition: 'background-color 0.2s', fontSize: '0.9rem' }}>
+            {sub}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export default function Buyers() {
   const router = useRouter();
   const { user, loading, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [activeSection, setActiveSection] = useState<'All' | keyof typeof subcategories>('Men');
   const dropdownRef = useRef(null);
 
@@ -212,6 +213,7 @@ export default function Buyers() {
   }, [loading, user, router, logout]);
 
   const handleCategorySelection = (category: keyof typeof subcategories | 'All') => {
+    setShowForm(false);
     setActiveSection(category);
   }
 
@@ -223,14 +225,25 @@ export default function Buyers() {
 
   const handleProfileClick = () => {
     setIsDropdownOpen(false);
-    alert(`Routing to ${user!.name}'s Buyer Profile Page!`);
+    alert(`Routing to ${user!.name}'s Seller Profile Page!`);
   };
 
   const handleCartClick = () => {
     alert("Routing to Cart Page!");
   };
 
-  if (loading || !user || (user && user.type !== 'buyer')) {
+  const formTransitionStyle: React.CSSProperties = {
+    transition: 'opacity 0.5s ease-in-out, max-height 0.5s ease-in-out',
+    opacity: showForm ? 1 : 0,
+    pointerEvents: showForm ? 'auto' : 'none',
+    maxHeight: showForm ? '1000px' : '0',
+    overflow: 'hidden',
+    display: 'flex',
+    justifyContent: 'center',
+  };
+
+
+  if (loading || !user || user.type !== 'buyer') {
     return (
       <div style={{ color: 'white', backgroundColor: 'black', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         Redirecting to Login...
@@ -242,22 +255,18 @@ export default function Buyers() {
     <div style={styles.pageWrapper}>
       <header style={styles.header}>
         <div style={styles.logoContainerStyles} onClick={() => router.push('/')}>
-          {/* FIX: Add Image component here */}
           <Image src={logo} alt="Shop Sphere Logo" style={{ height: '75px', width: 'auto' }} />
           <Button style={styles.logoNameStyles}>Shop Sphere</Button>
         </div>
         <div style={styles.buttonContainer}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '35px' }}>
 
-            {/* 1. Cart Icon */}
             <div onClick={handleCartClick} style={{ cursor: 'pointer' }}>
               <CartIcon />
             </div>
 
-            {/* 2. Profile Icon and Dropdown Container */}
             <div style={{ position: 'relative' }} ref={dropdownRef}>
 
-              {/* Profile Icon (Toggles Dropdown) */}
               <svg
                 onClick={() => setIsDropdownOpen(prev => !prev)}
                 xmlns="http://www.w3.org.org/2000/svg"
@@ -269,7 +278,6 @@ export default function Buyers() {
                 <path d="M12 20s-8-2-8-5a8 8 0 0 1 16 0c0 3-8 5-8 5z"></path>
               </svg>
 
-              {/* Dropdown Menu */}
               {isDropdownOpen && (
                 <div style={dropdownStyles.menu}>
                   <div
@@ -290,7 +298,6 @@ export default function Buyers() {
           </div>
         </div>
       </header>
-
       <div style={styles.sectionsContainerStyles}>
         <Sections onCategoryClick={handleCategorySelection} />
         <div className="p-4 relative">
@@ -321,9 +328,10 @@ export default function Buyers() {
             subcategories={subcategories[activeSection]}
           />
         )}
+
         <div style={{ padding: '20px', color: 'white', textAlign: 'center' }}>
-          <h1>Welcome, {user.name} (Buyer)</h1>
-          <p>This is your buyer dashboard content.</p>
+          <h1>Welcome, {user.username} (Buyer)</h1>
+          <p>This is your buyers dashboard content.</p>
         </div>
       </div>
     </div>

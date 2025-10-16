@@ -112,3 +112,68 @@ export const addProductToDb = async (productData: ProductData) => {
     throw new Error("Failed to register product to database.");
   }
 }
+
+export const getSellerProducts = async (username: string, category: string, subCategory: string) => {
+  try {
+    const productsRef = ref(db, 'products');
+
+    let productQuery = query(productsRef, orderByChild('username'), equalTo(username));
+
+    const snapshot = await get(productQuery);
+
+    if (snapshot.exists()) {
+      const allProducts: any[] = [];
+      snapshot.forEach((childSnapshot) => {
+        const product = childSnapshot.val();
+
+        if (
+          product.productCategory === category &&
+          product.productSubCategory === subCategory
+        ) {
+          allProducts.push({ key: childSnapshot.key, ...product });
+        }
+      });
+      console.log(`Found ${allProducts.length} products.`);
+      return allProducts;
+    }
+
+    return [];
+  } catch (e) {
+    console.error("Error fetching seller products: ", e);
+    return [];
+  }
+};
+
+export const getBuyerProducts = async (category: string, subCategory: string) => {
+  try {
+    const productsRef = ref(db, 'products');
+
+    const productQuery = query(
+      productsRef, 
+      orderByChild('productCategory'), 
+      equalTo(category)
+    );
+
+    const snapshot = await get(productQuery);
+
+    if (snapshot.exists()) {
+      const allProducts: any[] = [];
+      
+      snapshot.forEach((childSnapshot) => {
+        const product = childSnapshot.val();
+        
+        if (product.productSubCategory === subCategory) {
+          allProducts.push({ key: childSnapshot.key, ...product });
+        }
+      });
+      
+      console.log(`Found ${allProducts.length} products across all sellers.`);
+      return allProducts;
+    }
+
+    return [];
+  } catch (e) {
+    console.error("Error fetching buyer products: ", e);
+    return [];
+  }
+};
