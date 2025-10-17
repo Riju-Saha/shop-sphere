@@ -213,26 +213,8 @@ export default function Phones() {
     router.push('/');
   };
 
-  const CartIcon = () => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24" height="24" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-      strokeLinejoin="round"
-      style={styles.iconStyles}
-    >
-      <circle cx="9" cy="21" r="1"></circle>
-      <circle cx="20" cy="21" r="1"></circle>
-      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-    </svg>
-  );
-
-  const handleCartClick = () => {
-    alert("Routing to Cart Page!");
-  };
   return (
     <div style={styles.pageWrapper}>
-
       <header style={styles.header}>
         <div style={styles.logoContainerStyles} onClick={() => router.push('/')}>
           <Image src={logo} alt="Shop Sphere Logo" style={{ height: '75px', width: 'auto' }} />
@@ -240,10 +222,6 @@ export default function Phones() {
         </div>
         <div style={styles.buttonContainer}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '35px' }}>
-
-            <div onClick={handleCartClick} style={{ cursor: 'pointer' }}>
-              <CartIcon />
-            </div>
 
             <div style={{ position: 'relative' }} ref={dropdownRef}>
 

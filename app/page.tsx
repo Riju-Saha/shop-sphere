@@ -179,7 +179,6 @@ export default function Home() {
           <Button style={styles.logoNameStyles}>Shop Sphere</Button>
         </div>
         <div style={styles.buttonContainer}>
-          {/* Logged-out state buttons */}
           <Button style={styles.button} onClick={handleLogin}>Login</Button>
           <Button style={styles.button} onClick={handleRegister}>Register</Button>
         </div>

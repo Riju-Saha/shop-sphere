@@ -132,20 +132,6 @@ const formInputStyles = {
   } as React.CSSProperties
 };
 
-const CartIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24" height="24" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-    strokeLinejoin="round"
-    style={styles.iconStyles}
-  >
-    <circle cx="9" cy="21" r="1"></circle>
-    <circle cx="20" cy="21" r="1"></circle>
-    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-  </svg>
-);
-
 const subcategories = {
   Men: ['T-Shirts', 'Jeans', 'Watches', 'Footwears'],
   Women: ['Tops', 'Watches', 'Handbags', 'Jwellery'],
@@ -419,10 +405,6 @@ export default function Sellers() { // Component named Sellers
     alert(`Routing to ${user!.name}'s Seller Profile Page!`);
   };
 
-  const handleCartClick = () => {
-    alert("Routing to Cart Page!");
-  };
-
   const formTransitionStyle: React.CSSProperties = {
     transition: 'opacity 0.5s ease-in-out, max-height 0.5s ease-in-out',
     opacity: showForm ? 1 : 0,
@@ -451,11 +433,6 @@ export default function Sellers() { // Component named Sellers
         </div>
         <div style={styles.buttonContainer}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '35px' }}>
-
-            <div onClick={handleCartClick} style={{ cursor: 'pointer' }}>
-              <CartIcon />
-            </div>
-
             <div style={{ position: 'relative' }} ref={dropdownRef}>
 
               <svg
