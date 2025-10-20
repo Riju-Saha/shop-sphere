@@ -298,7 +298,7 @@ export default function Laptops() {
 
   const handleProfileClick = () => {
     setIsDropdownOpen(false);
-    alert(`Routing to ${currentUsername}'s Seller Profile Page!`);
+    alert(`Routing to ${currentUsername}'s buyer Profile Page!`);
   };
 
   const handleLogout = () => {
@@ -433,7 +433,7 @@ export default function Laptops() {
           {isLoadingProducts && <p style={{ color: 'gray', padding: '0 20px' }}>Loading products...</p>}
 
           {!isLoadingProducts && sortedLaptopsProducts.length === 0 && currentUsername !== 'Guest' && (
-            <p style={{ color: 'gray', padding: '0 20px' }}>No Laptops products found for this seller.</p>
+            <p style={{ color: 'gray', padding: '0 20px' }}>No Laptops products found for this buyer.</p>
           )}
 
           <div style={styles.productGrid}>
