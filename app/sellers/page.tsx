@@ -247,7 +247,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
       </h2>
 
       <form onSubmit={handleSubmit}>
-        {/* Primary Category Dropdown */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', marginBottom: '15px' }}>
           <div style={{ flex: '1 1 48%' }}>
             <label style={formInputStyles.label}>Product Category:</label>
@@ -257,8 +256,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
               value={selectedCategory}
               onChange={handleCategoryChange}
               onFocus={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, true)}
-              onBlur={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, false)}
-            >
+              onBlur={(e) => applyFocusStyles(e as React.FocusEvent<HTMLSelectElement>, false)}>
               <option value="" disabled hidden>Select a Category</option>
               <option value="Men">Men</option>
               <option value="Women">Women</option>
@@ -292,7 +290,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
 
         </div>
 
-        {/* Product Name Input */}
         <div style={{ marginBottom: '15px' }}>
           <label style={formInputStyles.label}>Product Name:</label>
           <Input
@@ -307,7 +304,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
           />
         </div>
 
-        {/* Product Price Input */}
         <div style={{ marginBottom: '15px' }}>
           <label style={formInputStyles.label}>Product Price:</label>
           <Input
@@ -340,7 +336,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
   );
 };
 
-export default function Sellers() { // Component named Sellers
+export default function Sellers() {
   const router = useRouter();
   const { user, loading, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);

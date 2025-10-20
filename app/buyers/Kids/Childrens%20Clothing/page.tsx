@@ -7,6 +7,7 @@ import logo from '../../../../public/logo.png';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../../../context/page';
 import { getBuyerProducts } from '@/app/firebase/firebase';
+import { Menu, X } from 'lucide-react';
 
 interface StoredUser {
   username: string;
@@ -35,8 +36,12 @@ interface Styles {
   iconStyles: React.CSSProperties;
   sectionsContainerStyles: React.CSSProperties;
   productGrid: React.CSSProperties;
-  filterSidebar: React.CSSProperties;
+  filterSidebar: (isSidebarOpen: boolean, isMobile: boolean) => React.CSSProperties;
+  sidebarToggle: (isMobile: boolean) => React.CSSProperties;
+  overlay: (isSidebarOpen: boolean, isMobile: boolean) => React.CSSProperties;
 };
+
+const MOBILE_BREAKPOINT = '768px';
 
 const styles: Styles = {
   pageWrapper: {
@@ -52,6 +57,7 @@ const styles: Styles = {
     alignItems: 'center',
     width: '100%',
     padding: '0 1vw 0 0',
+    minHeight: '80px',
   },
   logoContainerStyles: {
     display: 'flex',
@@ -95,18 +101,68 @@ const styles: Styles = {
   },
   productGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
     gap: '20px',
     padding: '20px',
   },
-  filterSidebar: {
-    width: '250px',
-    padding: '20px',
-    backgroundColor: '#1e1e1e',
-    borderRight: '1px solid #333',
-    height: '100%',
-    overflowY: 'auto',
-  }
+
+  filterSidebar: (isSidebarOpen, isMobile) => {
+    const baseStyle: React.CSSProperties = {
+      width: '250px',
+      padding: '20px',
+      backgroundColor: '#1e1e1e',
+      borderRight: '1px solid #333',
+      height: '100%',
+      overflowY: 'auto',
+      transition: 'transform 0.3s ease-in-out',
+    };
+
+    if (isMobile) {
+      return {
+        ...baseStyle,
+        position: 'fixed',
+        top: '1%',
+        left: '0',
+        height: '100vh',
+        zIndex: 20,
+        transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+      };
+    }
+
+    return baseStyle;
+  },
+
+  sidebarToggle: (isMobile) => ({
+    display: isMobile ? 'block' : 'none',
+    position: 'absolute',
+    left: '10px',
+    color: 'white',
+    cursor: 'pointer',
+    zIndex: 30,
+    backgroundColor: 'transparent',
+    padding: '0',
+    border: 'none',
+    boxShadow: 'none',
+    minWidth: 'auto',
+    height: '24px'
+  }),
+
+  overlay: (isSidebarOpen, isMobile) => ({
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 10,
+    display: isSidebarOpen && isMobile ? 'block' : 'none',
+  }),
+};
+
+const mainFlexWrapperStyles: React.CSSProperties = {
+  display: 'flex',
+  flex: 1,
+  overflow: 'hidden',
 };
 
 const dropdownStyles = {
@@ -139,13 +195,28 @@ export default function ChildrensClothing() {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [childrensClothingProducts, setChildrensClothingProducts] = useState<any[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
-  const dropdownRef = useRef(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
   const [sortOption, setSortOption] = useState<SortOption>('date_desc');
   const [currentUsername, setCurrentUsername] = useState('Guest');
 
+  const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
+    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT})`);
+    const handleMediaQueryChange = (event: MediaQueryListEvent) => {
+      setIsMobile(event.matches);
+      if (!event.matches) {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    setIsMobile(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handleMediaQueryChange);
+
     if (typeof window !== 'undefined') {
       const userString = localStorage.getItem('user');
 
@@ -158,7 +229,33 @@ export default function ChildrensClothing() {
         }
       }
     }
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleMediaQueryChange);
+    };
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const targetNode = event.target as Node;
+
+      if (dropdownRef.current && !dropdownRef.current.contains(targetNode)) {
+        setIsDropdownOpen(false);
+      }
+
+      if (isMobile && isSidebarOpen && sidebarRef.current && !sidebarRef.current.contains(targetNode)) {
+        const toggleButton = document.getElementById('sidebar-toggle-button');
+        if (toggleButton && toggleButton.contains(targetNode)) return;
+
+        setIsSidebarOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen, isSidebarOpen, isMobile]);
 
   useEffect(() => {
     const category = 'Kids';
@@ -168,12 +265,12 @@ export default function ChildrensClothing() {
       const fetchProducts = async () => {
         setIsLoadingProducts(true);
         const products = await getBuyerProducts(category, subCategory);
-        const productsWithDate = products.map((p, index) => ({
+        const productsWithDate = products.map((p: any, index: number) => ({
           ...p,
           productPrice: Number(p.productPrice),
           dateAdded: p.dateAdded || new Date(Date.now() - index * 60000).toISOString(),
         }));
-        setChildrensClothingProducts(products);
+        setChildrensClothingProducts(productsWithDate);
         setIsLoadingProducts(false);
       };
       fetchProducts();
@@ -187,30 +284,35 @@ export default function ChildrensClothing() {
   const sortedChildrensClothingProducts = useMemo(() => {
     let productsCopy = [...childrensClothingProducts];
 
-    if (sortOption === 'date_desc') {
-      return productsCopy.reverse();
+    switch (sortOption) {
+      case 'date_desc':
+        return productsCopy.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime());
+      case 'price_low':
+        return productsCopy.sort((a, b) => a.productPrice - b.productPrice);
+      case 'price_high':
+        return productsCopy.sort((a, b) => b.productPrice - a.productPrice);
+      default:
+        return productsCopy.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime());
     }
-    return productsCopy.sort((a, b) => {
-      switch (sortOption) {
-        case 'price_low':
-          return a.productPrice - b.productPrice;
-        case 'price_high':
-          return b.productPrice - a.productPrice;
-        default:
-          return 0;
-      }
-    });
   }, [childrensClothingProducts, sortOption]);
 
   const handleProfileClick = () => {
     setIsDropdownOpen(false);
-    alert(`Routing to ${user!.name}'s Buyer Profile Page!`);
+    alert(`Routing to ${currentUsername}'s Seller Profile Page!`);
   };
 
   const handleLogout = () => {
     setIsDropdownOpen(false);
     logout();
     router.push('/');
+  };
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(prev => !prev);
+  }
+
+  const handleCartClick = () => {
+    alert("Routing to Cart Page!");
   };
 
   const CartIcon = () => (
@@ -227,30 +329,34 @@ export default function ChildrensClothing() {
     </svg>
   );
 
-  const handleCartClick = () => {
-    alert("Routing to Cart Page!");
-  };
-
   return (
-
     <div style={styles.pageWrapper}>
+      <div
+        style={styles.overlay(isSidebarOpen, isMobile)}
+        onClick={toggleSidebar}
+      />
       <header style={styles.header}>
+        <Button
+          id="sidebar-toggle-button"
+          onClick={toggleSidebar}
+          style={styles.sidebarToggle(isMobile)}
+        >
+          {isSidebarOpen ? <X size={24} style={{ color: 'white' }} /> : <Menu size={24} style={{ color: 'white' }} />}
+        </Button>
+
+
         <div style={styles.logoContainerStyles} onClick={() => router.push('/')}>
           <Image src={logo} alt="Shop Sphere Logo" style={{ height: '75px', width: 'auto' }} />
           <Button style={styles.logoNameStyles}>Shop Sphere</Button>
         </div>
+
+
         <div style={styles.buttonContainer}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '35px' }}>
-
-            <div onClick={handleCartClick} style={{ cursor: 'pointer' }}>
-              <CartIcon />
-            </div>
-
             <div style={{ position: 'relative' }} ref={dropdownRef}>
-
               <svg
                 onClick={() => setIsDropdownOpen(prev => !prev)}
-                xmlns="http://www.w3.org.org/2000/svg"
+                xmlns="http://www.w3.org/2000/svg"
                 width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth="2" strokeLinecap="round"
                 strokeLinejoin="round" style={styles.iconStyles}
@@ -279,10 +385,15 @@ export default function ChildrensClothing() {
           </div>
         </div>
       </header>
+
+
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
-        <div style={styles.filterSidebar}>
-          <h3 style={{ color: '#0e6fdeff', marginBottom: '20px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>Filter & Sort</h3>
+        <div
+          ref={sidebarRef}
+          style={styles.filterSidebar(isSidebarOpen, isMobile)}
+        >
+          <h3 style={{ color: '#0e6fdeff', marginBottom: '20px', borderBottom: '1px solid #333', paddingBottom: '10px', paddingLeft: '10px' }}>Filter & Sort</h3>
 
           <div style={{ marginBottom: '20px' }}>
             <h4 style={{ color: 'white', marginBottom: '10px' }}>Sort By</h4>
@@ -298,7 +409,7 @@ export default function ChildrensClothing() {
           </div>
 
           <div style={{ marginBottom: '20px' }}>
-            <h4 style={{ color: 'white', marginBottom: '10px' }}>Inventory Status</h4>
+            <h4 style={{ color: 'white', marginBottom: '10px' }}>Inventory Status (Not functional)</h4>
             <label style={{ display: 'block', color: 'white', marginBottom: '5px' }}>
               <input type="checkbox" style={{ marginRight: '8px' }} /> In Stock
             </label>
@@ -306,15 +417,23 @@ export default function ChildrensClothing() {
               <input type="checkbox" style={{ marginRight: '8px' }} /> Out of Stock
             </label>
           </div>
-        </div>
 
+          {isMobile && (
+            <Button
+              onClick={toggleSidebar}
+              style={{ width: '100%', marginTop: '20px', backgroundColor: '#ff4444' }}
+            >
+              Close Filters
+            </Button>
+          )}
+        </div>
         <div style={styles.sectionsContainerStyles}>
-          <h2 style={{ color: 'white', padding: '0 20px', marginBottom: '10px' }}>Inventory: Kids's Childrens Clothing ({sortedChildrensClothingProducts.length})</h2>
+          <h2 style={{ color: 'white', padding: '0 20px', marginBottom: '10px' }}>Inventory: {currentUsername}'s Childrens Clothing ({sortedChildrensClothingProducts.length})</h2>
 
           {isLoadingProducts && <p style={{ color: 'gray', padding: '0 20px' }}>Loading products...</p>}
 
           {!isLoadingProducts && sortedChildrensClothingProducts.length === 0 && currentUsername !== 'Guest' && (
-            <p style={{ color: 'gray', padding: '0 20px' }}>No Childrens Clothing products found for this buyer.</p>
+            <p style={{ color: 'gray', padding: '0 20px' }}>No Childrens Clothing products found for this seller.</p>
           )}
 
           <div style={styles.productGrid}>
@@ -335,19 +454,12 @@ export default function ChildrensClothing() {
                   <span style={{ color: '#0e6fdeff' }}>Product Image</span>
                 </div>
 
-                <h3 style={{ color: 'white' }}>{product.productName || 'Unnamed Product'}</h3>
-                <p style={{ color: '#00aaff', fontSize: '1rem', fontWeight: 'bold', margin: '5px 0' }}>
-                  Sold by: {product.username || 'Unknown Seller'}
-                </p>
+                <h3>{product.productName || 'Unnamed Product'}</h3>
+                <p style={{ color: 'lightgray', fontSize: '0.9rem', margin: '5px 0' }}>Category: {product.productCategory || 'N/A'} / {product.productSubCategory || 'N/A'}</p>
+                <p style={{ color: 'lightgray', fontSize: '0.9rem', margin: '5px 0' }}>Name: {product.productName}</p>
+                <p style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#00aaff' }}>Price: ${Number(product.productPrice).toFixed(2)}</p>
 
-                <p style={{ color: 'lightgray', fontSize: '0.9rem', margin: '5px 0' }}>
-                  Category: {product.productCategory || 'N/A'} / {product.productSubCategory || 'N/A'}
-                </p>
-                <p style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#00aaff' }}>
-                  Price: ${Number(product.productPrice).toFixed(2)}
-                </p>
-
-                <Button style={{ marginTop: '10px', backgroundColor: '#0e6fdeff', cursor: 'pointer' }}>View</Button>
+                <Button style={{ marginTop: '10px', backgroundColor: '#0e6fdeff' }}>Edit Details</Button>
               </div>
             ))}
           </div>

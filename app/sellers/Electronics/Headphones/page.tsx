@@ -128,7 +128,7 @@ const styles: Styles = {
         transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
       };
     }
-    
+
     return baseStyle;
   },
 
@@ -202,7 +202,7 @@ export default function Headphones() {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [sortOption, setSortOption] = useState<SortOption>('date_desc');
   const [currentUsername, setCurrentUsername] = useState('Guest');
-  
+
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -246,7 +246,7 @@ export default function Headphones() {
       if (isMobile && isSidebarOpen && sidebarRef.current && !sidebarRef.current.contains(targetNode)) {
         const toggleButton = document.getElementById('sidebar-toggle-button');
         if (toggleButton && toggleButton.contains(targetNode)) return;
-        
+
         setIsSidebarOpen(false);
       }
     };
@@ -306,33 +306,33 @@ export default function Headphones() {
     logout();
     router.push('/');
   };
-  
+
   const toggleSidebar = () => {
     setIsSidebarOpen(prev => !prev);
   }
 
   return (
     <div style={styles.pageWrapper}>
-      <div 
+      <div
         style={styles.overlay(isSidebarOpen, isMobile)}
         onClick={toggleSidebar}
       />
-      
+
       <header style={styles.header}>
-        
-        <Button 
+
+        <Button
           id="sidebar-toggle-button"
           onClick={toggleSidebar}
           style={styles.sidebarToggle(isMobile)}
         >
           {isSidebarOpen ? <X size={24} style={{ color: 'white' }} /> : <Menu size={24} style={{ color: 'white' }} />}
         </Button>
-        
+
         <div style={{ ...styles.logoContainerStyles, marginLeft: isMobile ? '50px' : '0' }} onClick={() => router.push('/')}>
           <Image src={logo} alt="Shop Sphere Logo" style={{ height: '75px', width: 'auto' }} />
           <Button style={styles.logoNameStyles}>Shop Sphere</Button>
         </div>
-        
+
         <div style={styles.buttonContainer}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '35px' }}>
             <div style={{ position: 'relative' }} ref={dropdownRef}>
@@ -367,10 +367,10 @@ export default function Headphones() {
           </div>
         </div>
       </header>
-      
+
       <div style={mainFlexWrapperStyles}>
-        
-        <div 
+
+        <div
           ref={sidebarRef}
           style={styles.filterSidebar(isSidebarOpen, isMobile)}
         >
@@ -398,10 +398,10 @@ export default function Headphones() {
               <input type="checkbox" style={{ marginRight: '8px' }} /> Out of Stock
             </label>
           </div>
-          
+
           {isMobile && (
-            <Button 
-              onClick={toggleSidebar} 
+            <Button
+              onClick={toggleSidebar}
               style={{ width: '100%', marginTop: '20px', backgroundColor: '#ff4444' }}
             >
               Close Filters
