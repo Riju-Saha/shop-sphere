@@ -13,7 +13,13 @@
     "products": {
       ".read": true,
       ".write": true,
-      ".indexOn": "username"
+      ".indexOn": ["username", "productCategory"]
+    },
+    "carts": {
+      "$username": {
+        ".read": true,
+        ".write": true
+      }
     }
   }
 }

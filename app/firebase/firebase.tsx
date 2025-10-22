@@ -1,7 +1,7 @@
 'use client';
 
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, push, DatabaseReference, query, orderByChild, equalTo, get } from "firebase/database";
+import { getDatabase, ref, push, DatabaseReference, query, orderByChild, equalTo, get, set, remove } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -30,7 +30,15 @@ interface ProductData {
   createdAt: Date;
 }
 
-// Initialize Firebase
+interface CartItemData {
+  buyerUsername: string;
+  productKey: string;
+  sellerUsername: string;
+  productPrice: number;
+  productQuantity: number;
+  productName: string;
+}
+
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
@@ -149,8 +157,8 @@ export const getBuyerProducts = async (category: string, subCategory: string) =>
     const productsRef = ref(db, 'products');
 
     const productQuery = query(
-      productsRef, 
-      orderByChild('productCategory'), 
+      productsRef,
+      orderByChild('productCategory'),
       equalTo(category)
     );
 
@@ -158,15 +166,15 @@ export const getBuyerProducts = async (category: string, subCategory: string) =>
 
     if (snapshot.exists()) {
       const allProducts: any[] = [];
-      
+
       snapshot.forEach((childSnapshot) => {
         const product = childSnapshot.val();
-        
+
         if (product.productSubCategory === subCategory) {
           allProducts.push({ key: childSnapshot.key, ...product });
         }
       });
-      
+
       console.log(`Found ${allProducts.length} products across all sellers.`);
       return allProducts;
     }
@@ -175,5 +183,65 @@ export const getBuyerProducts = async (category: string, subCategory: string) =>
   } catch (e) {
     console.error("Error fetching buyer products: ", e);
     return [];
+  }
+};
+
+export const addToCartDb = async (itemData: CartItemData) => {
+  const cartItemRef = ref(db, `carts/${itemData.buyerUsername}/${itemData.productKey}`);
+
+  try {
+    await set(cartItemRef, {
+      productKey: itemData.productKey,
+      productQuantity: itemData.productQuantity,
+      sellerUsername: itemData.sellerUsername,
+      priceAtAddition: itemData.productPrice,
+      productName: itemData.productName,
+    });
+    console.log(`Product ${itemData.productKey} added to cart for user: ${itemData.buyerUsername}`);
+    return true;
+  } catch (e) {
+    console.error("Error adding product to cart: ", e);
+    throw new Error("Failed to add item to cart.");
+  }
+};
+
+export const updateCartItemQuantityDb = async (
+  buyerUsername: string,
+  productKey: string,
+  newQuantity: number,
+  priceAtAddition: number,
+  sellerUsername: string,
+  productName: string
+) => {
+  const cartItemRef = ref(db, `carts/${buyerUsername}/${productKey}`);
+
+  try {
+    await set(cartItemRef, {
+      productKey,
+      productQuantity: newQuantity,
+      sellerUsername,
+      productName,
+      priceAtAddition,
+      updatedAt: new Date().toISOString() // Optional: track last update time
+    });
+    return true;
+  } catch (e) {
+    console.error("Error updating cart quantity:", e);
+    throw new Error("Failed to update cart quantity.");
+  }
+};
+
+// --- NEW UTILITY 2: Remove Item ---
+export const removeCartItemDb = async (buyerUsername: string, productKey: string) => {
+  const cartItemRef = ref(db, `carts/${buyerUsername}/${productKey}`);
+
+  try {
+    // The remove() function deletes the data at the specified database reference.
+    await remove(cartItemRef);
+    console.log(`Product ${productKey} removed from cart for user: ${buyerUsername}`);
+    return true;
+  } catch (e) {
+    console.error("Error removing cart item:", e);
+    throw new Error("Failed to remove item from cart.");
   }
 };
