@@ -287,7 +287,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ onCancel, currentUser }) => {
             )}
           </div>
 
-
         </div>
 
         <div style={{ marginBottom: '15px' }}>

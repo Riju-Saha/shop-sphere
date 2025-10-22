@@ -353,6 +353,9 @@ export default function Phones() {
 
         <div style={styles.buttonContainer}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '35px' }}>
+            <div onClick={handleCartClick} style={{ cursor: 'pointer' }}>
+              <CartIcon />
+            </div>
             <div style={{ position: 'relative' }} ref={dropdownRef}>
               <svg
                 onClick={() => setIsDropdownOpen(prev => !prev)}
@@ -459,7 +462,7 @@ export default function Phones() {
                 <p style={{ color: 'lightgray', fontSize: '0.9rem', margin: '5px 0' }}>Name: {product.productName}</p>
                 <p style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#00aaff' }}>Price: ${Number(product.productPrice).toFixed(2)}</p>
 
-                <Button style={{ marginTop: '10px', backgroundColor: '#0e6fdeff' }}>Edit Details</Button>
+                <Button style={{ marginTop: '10px', backgroundColor: '#0e6fdeff', cursor: 'pointer' }}>Add to Cart</Button>
               </div>
             ))}
           </div>
