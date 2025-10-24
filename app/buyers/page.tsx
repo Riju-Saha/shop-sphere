@@ -229,7 +229,7 @@ export default function Buyers() {
   };
 
   const handleCartClick = () => {
-    alert("Routing to Cart Page!");
+    router.push('/cart');
   };
 
   const formTransitionStyle: React.CSSProperties = {

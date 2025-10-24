@@ -6,7 +6,8 @@ import Image from 'next/image';
 import logo from '../../../../public/logo.png';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../../../context/page';
-import { getBuyerProducts } from '@/app/firebase/firebase';
+import { getBuyerProducts, addToCartDb, removeCartItemDb, updateCartItemQuantityDb } from '@/app/firebase/firebase';
+import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 
 interface StoredUser {
@@ -21,6 +22,7 @@ interface Product {
   productCategory: string;
   productSubCategory: string;
   dateAdded: string;
+  username: string;
 }
 
 type SortOption = 'date_desc' | 'price_low' | 'price_high';
@@ -56,8 +58,10 @@ const styles: Styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    padding: '0 1vw 0 0',
+    padding: '1vh 1vw',
     minHeight: '80px',
+    position: 'relative',
+    zIndex: 10,
   },
   logoContainerStyles: {
     display: 'flex',
@@ -105,35 +109,33 @@ const styles: Styles = {
     gap: '20px',
     padding: '20px',
   },
-
   filterSidebar: (isSidebarOpen, isMobile) => {
-    const baseStyle: React.CSSProperties = {
-      width: '250px',
-      padding: '20px',
-      backgroundColor: '#1e1e1e',
-      borderRight: '1px solid #333',
-      height: '100%',
-      overflowY: 'auto',
-      transition: 'transform 0.3s ease-in-out',
+    const desktopStyles: React.CSSProperties = {
+      width: isSidebarOpen ? '250px' : '0',
+      padding: isSidebarOpen ? '20px' : '0',
+      borderRight: isSidebarOpen ? '1px solid #333' : 'none',
+      overflowX: 'hidden',
+      visibility: isSidebarOpen ? 'visible' : 'hidden',
     };
 
-    if (isMobile) {
-      return {
-        ...baseStyle,
-        position: 'fixed',
-        top: '1%',
-        left: '0',
-        height: '100vh',
-        zIndex: 20,
-        transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
-      };
-    }
+    const mobileStyles: React.CSSProperties = {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '250px',
+      height: '100vh',
+      padding: '20px',
+      transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+      transition: 'transform 0.3s ease-in-out',
+      zIndex: 20,
+      boxShadow: '0 0 10px rgba(0, 0, 0, 0.5)',
+      backgroundColor: '#1e1e1e',
+    };
 
-    return baseStyle;
+    return isMobile ? mobileStyles : { ...styles.filterSidebar, ...desktopStyles, flexShrink: 0, };
   },
-
   sidebarToggle: (isMobile) => ({
-    display: isMobile ? 'block' : 'none',
+    display: 'block',
     position: 'absolute',
     left: '10px',
     color: 'white',
@@ -146,7 +148,6 @@ const styles: Styles = {
     minWidth: 'auto',
     height: '24px'
   }),
-
   overlay: (isSidebarOpen, isMobile) => ({
     position: 'fixed',
     top: 0,
@@ -157,12 +158,6 @@ const styles: Styles = {
     zIndex: 10,
     display: isSidebarOpen && isMobile ? 'block' : 'none',
   }),
-};
-
-const mainFlexWrapperStyles: React.CSSProperties = {
-  display: 'flex',
-  flex: 1,
-  overflow: 'hidden',
 };
 
 const dropdownStyles = {
@@ -191,39 +186,101 @@ const dropdownStyles = {
   } as React.CSSProperties
 };
 
+const CartIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24" height="24" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+    strokeLinejoin="round"
+    style={styles.iconStyles}
+  >
+    <circle cx="9" cy="21" r="1"></circle>
+    <circle cx="20" cy="21" r="1"></circle>
+    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+  </svg>
+);
+
+const quantityButtonStyles: Record<string, React.CSSProperties> = {
+  control: {
+    width: '35px',
+    height: '35px',
+    padding: '0',
+    borderRadius: '50%',
+    backgroundColor: '#0e6fdeff',
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: '1.2rem',
+    border: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  display: {
+    flexGrow: 1,
+    textAlign: 'center',
+    color: 'white',
+    fontSize: '1rem',
+    fontWeight: 'bold',
+    minWidth: '20px',
+  },
+  delete: {
+    width: '35px',
+    height: '35px',
+    padding: '0',
+    borderRadius: '50%',
+    backgroundColor: '#ff4444',
+    color: 'white',
+    border: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  }
+};
+
 export default function Handbags() {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [handbagsProducts, setHandbagsProducts] = useState<any[]>([]);
+  const [HandbagsProducts, setHandbagsProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [cartItemsState, setCartItemsState] = useState<Record<string, number>>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [sortOption, setSortOption] = useState<SortOption>('date_desc');
   const [currentUsername, setCurrentUsername] = useState('Guest');
-
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT})`);
+    const MOBILE_BREAKPOINT_NUM = 768;
+    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_NUM}px)`);
+
     const handleMediaQueryChange = (event: MediaQueryListEvent) => {
       setIsMobile(event.matches);
       if (!event.matches) {
+        setIsSidebarOpen(true);
+      } else {
         setIsSidebarOpen(false);
       }
     };
 
     setIsMobile(mediaQuery.matches);
+    if (!mediaQuery.matches) {
+      setIsSidebarOpen(true);
+    }
+
     mediaQuery.addEventListener('change', handleMediaQueryChange);
 
     if (typeof window !== 'undefined') {
       const userString = localStorage.getItem('user');
-
       if (userString) {
         try {
           const userObject: StoredUser = JSON.parse(userString);
-          setCurrentUsername(userObject.username);
+          if (userObject && userObject.username) {
+            setCurrentUsername(userObject.username);
+          }
         } catch (e) {
           console.error("Error parsing user data from localStorage:", e);
         }
@@ -246,7 +303,6 @@ export default function Handbags() {
       if (isMobile && isSidebarOpen && sidebarRef.current && !sidebarRef.current.contains(targetNode)) {
         const toggleButton = document.getElementById('sidebar-toggle-button');
         if (toggleButton && toggleButton.contains(targetNode)) return;
-
         setIsSidebarOpen(false);
       }
     };
@@ -264,41 +320,49 @@ export default function Handbags() {
     if (currentUsername && currentUsername !== 'Guest') {
       const fetchProducts = async () => {
         setIsLoadingProducts(true);
-        const products = await getBuyerProducts(category, subCategory);
-        const productsWithDate = products.map((p: any, index: number) => ({
+        const rawProducts = await getBuyerProducts(category, subCategory);
+
+        const processedProducts: Product[] = rawProducts.map((p: any) => ({
           ...p,
           productPrice: Number(p.productPrice),
-          dateAdded: p.dateAdded || new Date(Date.now() - index * 60000).toISOString(),
+          username: p.username || 'Seller Unknown',
+          dateAdded: p.dateAdded || new Date().toISOString(),
         }));
-        setHandbagsProducts(productsWithDate);
+
+        setHandbagsProducts(processedProducts);
         setIsLoadingProducts(false);
       };
       fetchProducts();
     }
   }, [currentUsername]);
 
+  // --- Sorting Logic ---
   const handleSortChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSortOption(event.target.value as SortOption);
   };
 
   const sortedHandbagsProducts = useMemo(() => {
-    let productsCopy = [...handbagsProducts];
+    let productsCopy = [...HandbagsProducts];
 
-    switch (sortOption) {
-      case 'date_desc':
-        return productsCopy.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime());
-      case 'price_low':
-        return productsCopy.sort((a, b) => a.productPrice - b.productPrice);
-      case 'price_high':
-        return productsCopy.sort((a, b) => b.productPrice - a.productPrice);
-      default:
-        return productsCopy.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime());
+    // Sorting by Date (Newest first)
+    if (sortOption === 'date_desc') {
+      return productsCopy.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime());
     }
-  }, [handbagsProducts, sortOption]);
 
+    return productsCopy.sort((a, b) => {
+      switch (sortOption) {
+        case 'price_low': return a.productPrice - b.productPrice;
+        case 'price_high': return b.productPrice - a.productPrice;
+        default: return 0;
+      }
+    });
+  }, [HandbagsProducts, sortOption]);
+
+  // --- Handlers ---
   const handleProfileClick = () => {
     setIsDropdownOpen(false);
-    alert(`Routing to ${currentUsername}'s Seller Profile Page!`);
+    const userName = (user as any)?.name ? (user as any).name : currentUsername;
+    alert(`Routing to ${userName}'s Profile Page!`);
   };
 
   const handleLogout = () => {
@@ -312,54 +376,179 @@ export default function Handbags() {
   }
 
   const handleCartClick = () => {
-    alert("Routing to Cart Page!");
+    router.push('/cart');
   };
 
-  const CartIcon = () => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24" height="24" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-      strokeLinejoin="round"
-      style={styles.iconStyles}
-    >
-      <circle cx="9" cy="21" r="1"></circle>
-      <circle cx="20" cy="21" r="1"></circle>
-      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-    </svg>
-  );
+  const handleQuantityChange = async (product: Product, newQuantity: number) => {
+    const productKey = product.key;
+    const buyerUsername = currentUsername;
+
+    if (buyerUsername === 'Guest') {
+      alert("Please log in to manage your cart.");
+      return;
+    }
+
+    try {
+      if (newQuantity <= 0) {
+        await removeCartItemDb(buyerUsername, productKey);
+
+        setCartItemsState(prev => {
+          const newState = { ...prev };
+          delete newState[productKey];
+          return newState;
+        });
+        alert(`${product.productName} removed from cart.`);
+        return;
+      }
+
+      await updateCartItemQuantityDb(
+        buyerUsername,
+        productKey,
+        newQuantity,
+        product.productPrice,
+        product.username,
+        product.productName
+      );
+
+      setCartItemsState(prev => ({
+        ...prev,
+        [productKey]: newQuantity,
+      }));
+
+    } catch (error) {
+      alert("Failed to update cart quantity in database. Please try again.");
+      console.error("Cart update error:", error);
+    }
+  };
+
+  const handleAddToCart = async (product: Product) => {
+    const buyerUsername = currentUsername;
+
+    if (buyerUsername === 'Guest') {
+      alert("Please log in to add items to your cart.");
+      return;
+    }
+
+    try {
+      const itemData = {
+        buyerUsername: buyerUsername,
+        productKey: product.key,
+        sellerUsername: product.username,
+        productPrice: product.productPrice,
+        productQuantity: 1,
+        productName: product.productName,
+      };
+
+      const currentQuantity = cartItemsState[product.key] || 0;
+      if (currentQuantity > 0) {
+        handleQuantityChange(product, currentQuantity + 1);
+        return;
+      }
+
+      await addToCartDb(itemData);
+      alert(`${product.productName} added to cart!`);
+
+      setCartItemsState(prev => ({
+        ...prev,
+        [product.key]: 1,
+      }));
+
+    } catch (error) {
+      alert("Could not add item to cart. Please try again.");
+      console.error("Cart addition error:", error);
+    }
+  };
+
+  if (loading || !user || (user && user.type !== 'buyer')) {
+    return (
+      <div style={{ color: 'white', backgroundColor: 'black', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        Redirecting to Login...
+      </div>
+    );
+  }
 
   return (
     <div style={styles.pageWrapper}>
+      <style jsx global>{`
+                
+                @media (max-width: 768px) {
+                    .sidebar-toggle-button-mobile {
+                        display: block !important;
+                    }
+                    .header-content {
+                        flex-direction: row;
+                        align-items: center !important;
+                    }
+                    .side-navbar {
+                        position: fixed !important;
+                        top: 0;
+                        left: 0;
+                        width: 250px !important;
+                        height: 100vh !important;
+                        z-index: 20;
+                        transform: translateX(-100%) !important;
+                        box-shadow: 4px 0 10px rgba(0,0,0,0.5);
+                    }
+                    .sidebar-collapsed .side-navbar {
+                        transform: translateX(0%) !important;
+                        visibility: visible !important;
+                    }
+                    .product-grid {
+                        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important; 
+                    }
+                }
+                
+                .sidebar-collapsed .side-navbar {
+                    width: 0 !important;
+                    padding: 0 !important;
+                    border-right: none !important;
+                    visibility: hidden;
+                    transition: width 0.3s ease-in-out, visibility 0.3s ease-in-out;
+                }
+            `}</style>
+
       <div
         style={styles.overlay(isSidebarOpen, isMobile)}
         onClick={toggleSidebar}
       />
-      <header style={styles.header}>
-        <Button
-          id="sidebar-toggle-button"
-          onClick={toggleSidebar}
-          style={styles.sidebarToggle(isMobile)}
-        >
-          {isSidebarOpen ? <X size={24} style={{ color: 'white' }} /> : <Menu size={24} style={{ color: 'white' }} />}
-        </Button>
+      <header style={styles.header} className="header-content">
 
+        {isMobile && (
+          <Button
+            id="sidebar-toggle-button"
+            onClick={toggleSidebar}
+            style={styles.sidebarToggle(isMobile)}
+          >
+            {isSidebarOpen ? <X size={24} style={{ color: 'white' }} /> : <Menu size={24} style={{ color: 'white' }} />}
+          </Button>
+        )}
 
         <div style={styles.logoContainerStyles} onClick={() => router.push('/')}>
           <Image src={logo} alt="Shop Sphere Logo" style={{ height: '75px', width: 'auto' }} />
           <Button style={styles.logoNameStyles}>Shop Sphere</Button>
         </div>
 
-
         <div style={styles.buttonContainer}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '35px' }}>
+
+            {!isMobile && (
+              <Button
+                onClick={toggleSidebar}
+                style={{ backgroundColor: 'transparent', color: 'white', border: '1px solid #444', padding: '8px 12px' }}
+                aria-label="Toggle Filters"
+              >
+                {isSidebarOpen ? 'Hide Filters' : 'Show Filters'}
+              </Button>
+            )}
+
             <div onClick={handleCartClick} style={{ cursor: 'pointer' }}>
               <CartIcon />
             </div>
+
             <div style={{ position: 'relative' }} ref={dropdownRef}>
               <svg
                 onClick={() => setIsDropdownOpen(prev => !prev)}
-                xmlns="http://www.w3.org/2000/svg"
+                xmlns="http://www.w3.org.org/2000/svg"
                 width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth="2" strokeLinecap="round"
                 strokeLinejoin="round" style={styles.iconStyles}
@@ -370,18 +559,8 @@ export default function Handbags() {
 
               {isDropdownOpen && (
                 <div style={dropdownStyles.menu}>
-                  <div
-                    onClick={handleProfileClick}
-                    style={dropdownStyles.item}
-                  >
-                    My Profile
-                  </div>
-                  <div
-                    onClick={handleLogout}
-                    style={dropdownStyles.logoutItem}
-                  >
-                    Logout
-                  </div>
+                  <div onClick={handleProfileClick} style={dropdownStyles.item}>My Profile</div>
+                  <div onClick={handleLogout} style={dropdownStyles.logoutItem}>Logout</div>
                 </div>
               )}
             </div>
@@ -389,14 +568,14 @@ export default function Handbags() {
         </div>
       </header>
 
-
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
         <div
           ref={sidebarRef}
           style={styles.filterSidebar(isSidebarOpen, isMobile)}
+          className="side-navbar"
         >
-          <h3 style={{ color: '#0e6fdeff', marginBottom: '20px', borderBottom: '1px solid #333', paddingBottom: '10px', paddingLeft: '10px' }}>Filter & Sort</h3>
+          <h3 style={{ color: '#0e6fdeff', marginBottom: '20px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>Filter & Sort</h3>
 
           <div style={{ marginBottom: '20px' }}>
             <h4 style={{ color: 'white', marginBottom: '10px' }}>Sort By</h4>
@@ -412,7 +591,7 @@ export default function Handbags() {
           </div>
 
           <div style={{ marginBottom: '20px' }}>
-            <h4 style={{ color: 'white', marginBottom: '10px' }}>Inventory Status (Not functional)</h4>
+            <h4 style={{ color: 'white', marginBottom: '10px' }}>Inventory Status</h4>
             <label style={{ display: 'block', color: 'white', marginBottom: '5px' }}>
               <input type="checkbox" style={{ marginRight: '8px' }} /> In Stock
             </label>
@@ -421,17 +600,13 @@ export default function Handbags() {
             </label>
           </div>
 
-          {isMobile && (
-            <Button
-              onClick={toggleSidebar}
-              style={{ width: '100%', marginTop: '20px', backgroundColor: '#ff4444' }}
-            >
-              Close Filters
-            </Button>
-          )}
         </div>
-        <div style={styles.sectionsContainerStyles}>
-          <h2 style={{ color: 'white', padding: '0 20px', marginBottom: '10px' }}>Inventory: {currentUsername}'s Handbags ({sortedHandbagsProducts.length})</h2>
+
+        <div
+          className="product-content-area"
+          style={styles.sectionsContainerStyles}
+        >
+          <h2 style={{ color: 'white', padding: '0 20px', marginBottom: '10px' }}>Inventory: Men's Handbags ({sortedHandbagsProducts.length})</h2>
 
           {isLoadingProducts && <p style={{ color: 'gray', padding: '0 20px' }}>Loading products...</p>}
 
@@ -440,31 +615,76 @@ export default function Handbags() {
           )}
 
           <div style={styles.productGrid}>
-            {sortedHandbagsProducts.map((product, i) => (
-              <div
-                key={product.key || i}
-                style={{
-                  backgroundColor: '#1f1f1f',
-                  padding: '15px',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.4)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <div style={{ height: '150px', backgroundColor: '#333', borderRadius: '4px', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ color: '#0e6fdeff' }}>Product Image</span>
+            {sortedHandbagsProducts.map((product, i) => {
+              const productKey = product.key || i.toString(); // Use key for state tracking
+              const currentQuantity = cartItemsState[productKey] || 0;
+              const isInCart = currentQuantity > 0;
+
+              return (
+                <div
+                  key={productKey}
+                  style={{
+                    backgroundColor: '#1f1f1f',
+                    padding: '15px',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.4)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div style={{ height: '150px', backgroundColor: '#333', borderRadius: '4px', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ color: '#0e6fdeff' }}>Product Image</span>
+                  </div>
+
+                  <h3>{product.productName || 'Unnamed Product'}</h3>
+                  <p style={{ color: 'lightgray', fontSize: '0.9rem', margin: '5px 0' }}>Category: {product.productCategory || 'N/A'} / {product.productSubCategory || 'N/A'}</p>
+                  <p style={{ color: 'lightgray', fontSize: '0.9rem', margin: '5px 0' }}>Sold by: {product.username || 'Unknown'}</p>
+                  <p style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#00aaff' }}>Price: ${Number(product.productPrice).toFixed(2)}</p>
+
+                  <div style={{ marginTop: '10px' }}>
+                    {isInCart ? (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '5px' }}>
+                        <Button
+                          onClick={() => handleQuantityChange(product, currentQuantity - 1)}
+                          style={quantityButtonStyles.control}
+                          aria-label="Decrease quantity"
+                        >
+                          —
+                        </Button>
+
+                        <div style={quantityButtonStyles.display}>
+                          {currentQuantity}
+                        </div>
+
+                        <Button
+                          onClick={() => handleQuantityChange(product, currentQuantity + 1)}
+                          style={quantityButtonStyles.control}
+                          aria-label="Increase quantity"
+                        >
+                          +
+                        </Button>
+
+                        <Button
+                          onClick={() => handleQuantityChange(product, 0)}
+                          style={quantityButtonStyles.delete}
+                          aria-label="Remove from cart"
+                        >
+                          <X size={16} />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        style={{ ...styles.button, width: '100%' }}
+                        onClick={() => handleAddToCart(product)}
+                      >
+                        Add to Cart
+                      </Button>
+                    )}
+                  </div>
                 </div>
-
-                <h3>{product.productName || 'Unnamed Product'}</h3>
-                <p style={{ color: 'lightgray', fontSize: '0.9rem', margin: '5px 0' }}>Category: {product.productCategory || 'N/A'} / {product.productSubCategory || 'N/A'}</p>
-                <p style={{ color: 'lightgray', fontSize: '0.9rem', margin: '5px 0' }}>Name: {product.productName}</p>
-                <p style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#00aaff' }}>Price: ${Number(product.productPrice).toFixed(2)}</p>
-
-                <Button style={{ marginTop: '10px', backgroundColor: '#0e6fdeff', cursor: 'pointer' }}>Add to Cart</Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

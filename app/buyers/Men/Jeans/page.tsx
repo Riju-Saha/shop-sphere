@@ -7,9 +7,9 @@ import logo from '../../../../public/logo.png';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../../../context/page';
 import { getBuyerProducts, addToCartDb, removeCartItemDb, updateCartItemQuantityDb } from '@/app/firebase/firebase';
+import { useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 
-// --- INTERFACES AND TYPES ---
 interface StoredUser {
   username: string;
   type: string;
@@ -43,9 +43,8 @@ interface Styles {
   overlay: (isSidebarOpen: boolean, isMobile: boolean) => React.CSSProperties;
 };
 
-const MOBILE_BREAKPOINT = '768px'; // Not directly used in JS but kept for context
+const MOBILE_BREAKPOINT = '768px';
 
-// --- STATIC STYLES ---
 const styles: Styles = {
   pageWrapper: {
     height: '100vh',
@@ -240,8 +239,6 @@ const quantityButtonStyles: Record<string, React.CSSProperties> = {
   }
 };
 
-
-// --- MAIN COMPONENT ---
 export default function Jeans() {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
@@ -256,7 +253,6 @@ export default function Jeans() {
   const [currentUsername, setCurrentUsername] = useState('Guest');
   const [isMobile, setIsMobile] = useState(false);
 
-  // --- Data Fetching and Initialization ---
   useEffect(() => {
     const MOBILE_BREAKPOINT_NUM = 768;
     const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_NUM}px)`);
@@ -264,20 +260,19 @@ export default function Jeans() {
     const handleMediaQueryChange = (event: MediaQueryListEvent) => {
       setIsMobile(event.matches);
       if (!event.matches) {
-        setIsSidebarOpen(true); // Default to open on desktop
+        setIsSidebarOpen(true);
       } else {
-        setIsSidebarOpen(false); // Default to closed on mobile
+        setIsSidebarOpen(false);
       }
     };
 
     setIsMobile(mediaQuery.matches);
     if (!mediaQuery.matches) {
-      setIsSidebarOpen(true); // Default to open on desktop
+      setIsSidebarOpen(true);
     }
 
     mediaQuery.addEventListener('change', handleMediaQueryChange);
 
-    // Get Username
     if (typeof window !== 'undefined') {
       const userString = localStorage.getItem('user');
       if (userString) {
@@ -325,7 +320,6 @@ export default function Jeans() {
     if (currentUsername && currentUsername !== 'Guest') {
       const fetchProducts = async () => {
         setIsLoadingProducts(true);
-        // NOTE: Using getBuyerProducts for public/all seller products
         const rawProducts = await getBuyerProducts(category, subCategory);
 
         const processedProducts: Product[] = rawProducts.map((p: any) => ({
@@ -382,7 +376,7 @@ export default function Jeans() {
   }
 
   const handleCartClick = () => {
-    alert("Routing to Cart Page!");
+    router.push('/cart');
   };
 
   const handleQuantityChange = async (product: Product, newQuantity: number) => {
@@ -395,12 +389,9 @@ export default function Jeans() {
     }
 
     try {
-      // --- REMOVE LOGIC (Delete Button or Decrement to 0) ---
       if (newQuantity <= 0) {
-        // Delete the item from the database
         await removeCartItemDb(buyerUsername, productKey);
 
-        // Update local state by removing the item
         setCartItemsState(prev => {
           const newState = { ...prev };
           delete newState[productKey];
@@ -410,25 +401,21 @@ export default function Jeans() {
         return;
       }
 
-      // --- UPDATE LOGIC (Increment or Decrement > 0) ---
       await updateCartItemQuantityDb(
         buyerUsername,
         productKey,
         newQuantity,
-        product.productPrice, // Price at addition
-        product.username,      // Seller username
-        product.productName    // Product name
+        product.productPrice,
+        product.username,
+        product.productName
       );
 
-      // Update local state with the new quantity
       setCartItemsState(prev => ({
         ...prev,
         [productKey]: newQuantity,
       }));
 
     } catch (error) {
-      // If DB operation fails, roll back the local state (optional but good practice)
-      // For simplicity, we'll just alert the failure.
       alert("Failed to update cart quantity in database. Please try again.");
       console.error("Cart update error:", error);
     }
@@ -454,16 +441,13 @@ export default function Jeans() {
 
       const currentQuantity = cartItemsState[product.key] || 0;
       if (currentQuantity > 0) {
-        // If it's already in the cart, use the quantity update logic instead of the base add
         handleQuantityChange(product, currentQuantity + 1);
         return;
       }
 
-      // Assuming addToCartDb is correctly imported and handles the Realtime DB write
       await addToCartDb(itemData);
       alert(`${product.productName} added to cart!`);
 
-      // Update local state to show quantity control
       setCartItemsState(prev => ({
         ...prev,
         [product.key]: 1,
@@ -475,7 +459,6 @@ export default function Jeans() {
     }
   };
 
-  // Check loading/auth status early
   if (loading || !user || (user && user.type !== 'buyer')) {
     return (
       <div style={{ color: 'white', backgroundColor: 'black', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -487,9 +470,7 @@ export default function Jeans() {
   return (
     <div style={styles.pageWrapper}>
       <style jsx global>{`
-                /* Global styles for responsiveness and sidebar control */
                 
-                /* Mobile Breakpoint (<= 768px) */
                 @media (max-width: 768px) {
                     .sidebar-toggle-button-mobile {
                         display: block !important;
@@ -517,7 +498,6 @@ export default function Jeans() {
                     }
                 }
                 
-                /* Desktop/Tablet Collapse State */
                 .sidebar-collapsed .side-navbar {
                     width: 0 !important;
                     padding: 0 !important;
@@ -533,7 +513,6 @@ export default function Jeans() {
       />
       <header style={styles.header} className="header-content">
 
-        {/* Mobile Toggle Button for Sidebar (Only visible on small screen) */}
         {isMobile && (
           <Button
             id="sidebar-toggle-button"
@@ -552,7 +531,6 @@ export default function Jeans() {
         <div style={styles.buttonContainer}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '35px' }}>
 
-            {/* Sidebar Toggle Button (Desktop Only) */}
             {!isMobile && (
               <Button
                 onClick={toggleSidebar}
@@ -590,10 +568,8 @@ export default function Jeans() {
         </div>
       </header>
 
-      {/* --- MAIN CONTENT LAYOUT --- */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
 
-        {/* LEFT SIDEBAR: Filters & Sort (The Side Navbar) */}
         <div
           ref={sidebarRef}
           style={styles.filterSidebar(isSidebarOpen, isMobile)}
@@ -601,7 +577,6 @@ export default function Jeans() {
         >
           <h3 style={{ color: '#0e6fdeff', marginBottom: '20px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>Filter & Sort</h3>
 
-          {/* Sort By Dropdown */}
           <div style={{ marginBottom: '20px' }}>
             <h4 style={{ color: 'white', marginBottom: '10px' }}>Sort By</h4>
             <select
@@ -615,7 +590,6 @@ export default function Jeans() {
             </select>
           </div>
 
-          {/* Inventory Status Filters */}
           <div style={{ marginBottom: '20px' }}>
             <h4 style={{ color: 'white', marginBottom: '10px' }}>Inventory Status</h4>
             <label style={{ display: 'block', color: 'white', marginBottom: '5px' }}>
@@ -626,10 +600,8 @@ export default function Jeans() {
             </label>
           </div>
 
-          {/* Close button inside mobile sidebar (Already handled above) */}
         </div>
 
-        {/* RIGHT CONTENT: Product Grid Area */}
         <div
           className="product-content-area"
           style={styles.sectionsContainerStyles}
@@ -642,7 +614,6 @@ export default function Jeans() {
             <p style={{ color: 'gray', padding: '0 20px' }}>No Jeans products found for this seller.</p>
           )}
 
-          {/* Product Card Display Grid */}
           <div style={styles.productGrid}>
             {sortedJeansProducts.map((product, i) => {
               const productKey = product.key || i.toString(); // Use key for state tracking
@@ -671,11 +642,9 @@ export default function Jeans() {
                   <p style={{ color: 'lightgray', fontSize: '0.9rem', margin: '5px 0' }}>Sold by: {product.username || 'Unknown'}</p>
                   <p style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#00aaff' }}>Price: ${Number(product.productPrice).toFixed(2)}</p>
 
-                  {/* --- Conditional Control Section --- */}
                   <div style={{ marginTop: '10px' }}>
                     {isInCart ? (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '5px' }}>
-                        {/* Decrement Button */}
                         <Button
                           onClick={() => handleQuantityChange(product, currentQuantity - 1)}
                           style={quantityButtonStyles.control}
@@ -684,12 +653,10 @@ export default function Jeans() {
                           —
                         </Button>
 
-                        {/* Quantity Display */}
                         <div style={quantityButtonStyles.display}>
                           {currentQuantity}
                         </div>
 
-                        {/* Increment Button */}
                         <Button
                           onClick={() => handleQuantityChange(product, currentQuantity + 1)}
                           style={quantityButtonStyles.control}
@@ -698,7 +665,6 @@ export default function Jeans() {
                           +
                         </Button>
 
-                        {/* Delete Button (X icon is preferred for delete) */}
                         <Button
                           onClick={() => handleQuantityChange(product, 0)}
                           style={quantityButtonStyles.delete}
@@ -708,7 +674,6 @@ export default function Jeans() {
                         </Button>
                       </div>
                     ) : (
-                      // Standard "Add to Cart" button when not in cart
                       <Button
                         style={{ ...styles.button, width: '100%' }}
                         onClick={() => handleAddToCart(product)}

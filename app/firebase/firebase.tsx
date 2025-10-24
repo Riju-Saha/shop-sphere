@@ -39,6 +39,15 @@ interface CartItemData {
   productName: string;
 }
 
+export interface DBCartItem {
+  productKey: string;
+  productName: string;
+  productQuantity: number;
+  sellerUsername: string;
+  priceAtAddition: number;
+  updatedAt?: string;
+}
+
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
@@ -222,7 +231,7 @@ export const updateCartItemQuantityDb = async (
       sellerUsername,
       productName,
       priceAtAddition,
-      updatedAt: new Date().toISOString() // Optional: track last update time
+      updatedAt: new Date().toISOString()
     });
     return true;
   } catch (e) {
@@ -231,17 +240,47 @@ export const updateCartItemQuantityDb = async (
   }
 };
 
-// --- NEW UTILITY 2: Remove Item ---
 export const removeCartItemDb = async (buyerUsername: string, productKey: string) => {
   const cartItemRef = ref(db, `carts/${buyerUsername}/${productKey}`);
 
   try {
-    // The remove() function deletes the data at the specified database reference.
     await remove(cartItemRef);
     console.log(`Product ${productKey} removed from cart for user: ${buyerUsername}`);
     return true;
   } catch (e) {
     console.error("Error removing cart item:", e);
     throw new Error("Failed to remove item from cart.");
+  }
+};
+
+export const getCartItemsDb = async (buyerUsername: string): Promise<DBCartItem[]> => {
+  if (!buyerUsername || buyerUsername === 'Guest') {
+    return [];
+  }
+  
+  const cartRef = ref(db, `carts/${buyerUsername}`);
+
+  try {
+    const snapshot = await get(cartRef);
+
+    if (snapshot.exists()) {
+      const cartItems: DBCartItem[] = [];
+      
+      snapshot.forEach((childSnapshot) => {
+        const item = childSnapshot.val();
+        cartItems.push({ 
+          productKey: childSnapshot.key as string, 
+          ...item 
+        });
+      });
+
+      console.log(`Found ${cartItems.length} cart items for user: ${buyerUsername}`);
+      return cartItems;
+    }
+
+    return [];
+  } catch (e) {
+    console.error("Error fetching cart items: ", e);
+    throw new Error("Failed to fetch cart items.");
   }
 };
